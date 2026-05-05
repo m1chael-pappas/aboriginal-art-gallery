@@ -1,0 +1,169 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-05T00:00:00.000Z",
+  "__export_source": "manual",
+  "resources": [
+    {
+      "_id": "wrk_aag",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "Aboriginal Art Gallery API",
+      "description": "Local development collection. Override base_url in the environment if the API is running elsewhere.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_aag",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "artist_id": "00000000-0000-0000-0000-000000000000"
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_system",
+      "_type": "request_group",
+      "parentId": "wrk_aag",
+      "name": "System",
+      "description": "Liveness / readiness checks.",
+      "metaSortKey": -100
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_system",
+      "name": "GET /health",
+      "method": "GET",
+      "url": "{{ _.base_url }}/health",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -100
+    },
+    {
+      "_id": "fld_artists",
+      "_type": "request_group",
+      "parentId": "wrk_aag",
+      "name": "Artists",
+      "description": "Aboriginal artists CRUD. After POST, copy the returned id into the artist_id environment variable to exercise GET/PUT/DELETE.",
+      "metaSortKey": 0
+    },
+    {
+      "_id": "req_artists_list",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "GET /artists",
+      "method": "GET",
+      "url": "{{ _.base_url }}/artists",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -100
+    },
+    {
+      "_id": "req_artists_get",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "GET /artists/:id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/artists/{{ _.artist_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -90
+    },
+    {
+      "_id": "req_artists_create",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "POST /artists",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artists",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Emily Kame Kngwarreye\",\n  \"birth_year\": 1910,\n  \"death_year\": 1996,\n  \"region\": \"Utopia, Northern Territory\",\n  \"biography\": \"One of Australia's most prominent contemporary Aboriginal artists, known for her vibrant, gestural paintings of her Country.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -80
+    },
+    {
+      "_id": "req_artists_create_invalid_lifespan",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "POST /artists (invalid: death < birth)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artists",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Should Fail\",\n  \"birth_year\": 1990,\n  \"death_year\": 1980\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -75
+    },
+    {
+      "_id": "req_artists_create_empty_name",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "POST /artists (invalid: empty name)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artists",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"   \"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -73
+    },
+    {
+      "_id": "req_artists_update",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "PUT /artists/:id",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/artists/{{ _.artist_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"display_name\": \"Emily Kame Kngwarreye\",\n  \"birth_year\": 1910,\n  \"death_year\": 1996,\n  \"region\": \"Utopia\",\n  \"biography\": \"Updated biography.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -70
+    },
+    {
+      "_id": "req_artists_delete",
+      "_type": "request",
+      "parentId": "fld_artists",
+      "name": "DELETE /artists/:id",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/artists/{{ _.artist_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -60
+    }
+  ]
+}
