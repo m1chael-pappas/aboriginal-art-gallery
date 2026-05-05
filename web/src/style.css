@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
+/*
+ * Direction D — Catalog / Archive
+ *
+ * Earth-toned palette, Inter for body, JetBrains Mono for IDs / counts /
+ * breadcrumbs. Tailwind v4 generates utilities from @theme, so
+ * `bg-paper`, `text-ink`, `text-ochre`, `border-line`, `font-mono` etc.
+ * are all available alongside the CSS custom properties.
+ */
+@theme {
+  --color-paper: oklch(0.97 0.01 80);
+  --color-ink: oklch(0.18 0 0);
+  --color-muted: oklch(0.55 0.02 60);
+  --color-ochre: oklch(0.62 0.13 50);
+  --color-line: oklch(0.92 0.01 70);
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
+}
+
 html,
 body,
 #app {
   height: 100%;
   margin: 0;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
