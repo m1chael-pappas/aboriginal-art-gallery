@@ -17,7 +17,6 @@ web/                Vue 3 frontend
 docs/               BRD, schema, architecture diagrams, task brief
 docker-compose.yml  Postgres + PostGIS for local dev
 PLAN.md             Milestones and decisions
-TODO.md             Active work items
 ```
 
 ## Quick start
@@ -38,6 +37,5 @@ docker compose up -d
 ## Documentation
 
 - [`PLAN.md`](./PLAN.md) - milestones, tech decisions
-- [`TODO.md`](./TODO.md) - active todo list
 - [`docs/brief.md`](./docs/brief.md) - original task brief
 - [`docs/insomnia.json`](./docs/insomnia.json) - Insomnia REST client collection (import via *Application > Preferences > Data > Import Data*)
