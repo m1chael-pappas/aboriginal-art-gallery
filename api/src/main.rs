@@ -1,15 +1,8 @@
 use std::net::SocketAddr;
 
-use axum::Router;
+use gallery_api::{build_router, state::AppState};
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
-
-mod artists;
-mod error;
-mod health;
-mod state;
-
-use state::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -30,12 +23,7 @@ async fn main() -> anyhow::Result<()> {
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let state = AppState { pool };
-
-    let app = Router::new()
-        .merge(health::router())
-        .merge(artists::router())
-        .with_state(state);
+    let app = build_router(AppState { pool });
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     let listener = tokio::net::TcpListener::bind(addr).await?;
