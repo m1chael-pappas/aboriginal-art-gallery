@@ -1,13 +1,13 @@
 # Aboriginal Art Gallery
 
 Backend service and web frontend for an aboriginal art gallery of Australia.
-University Practical Task 5.2 (High Distinction).
+University Practical Task 5.2.
 
 ## Stack
 
-- **Backend** — Rust, Axum, sqlx, PostgreSQL 16 + PostGIS 3.4
-- **Frontend** — Vue 3, Vite, Pinia, Vue Router, TailwindCSS
-- **Infra** — Docker Compose
+- **Backend** - Rust, Axum, sqlx, PostgreSQL 16 + PostGIS 3.4
+- **Frontend** - Vue 3, Vite, Pinia, Vue Router, TailwindCSS
+- **Infra** - Docker Compose
 
 ## Project structure
 
@@ -37,6 +37,6 @@ docker compose up -d
 
 ## Documentation
 
-- [`PLAN.md`](./PLAN.md) — milestones, tech decisions
-- [`TODO.md`](./TODO.md) — active todo list
-- [`docs/brief.md`](./docs/brief.md) — original task brief
+- [`PLAN.md`](./PLAN.md) - milestones, tech decisions
+- [`TODO.md`](./TODO.md) - active todo list
+- [`docs/brief.md`](./docs/brief.md) - original task brief
