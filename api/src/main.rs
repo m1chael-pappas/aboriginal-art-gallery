@@ -4,8 +4,9 @@ use axum::Router;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
+mod artists;
 mod error;
-mod routes;
+mod health;
 mod state;
 
 use state::AppState;
@@ -32,7 +33,8 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState { pool };
 
     let app = Router::new()
-        .merge(routes::health::router())
+        .merge(health::router())
+        .merge(artists::router())
         .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
