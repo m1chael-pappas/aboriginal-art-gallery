@@ -187,3 +187,30 @@ async fn delete_artist_unknown_id_returns_404(pool: PgPool) {
     let (status, _) = client.delete(&format!("/artists/{unknown}")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
+
+#[sqlx::test]
+async fn delete_artist_with_artifacts_returns_409(pool: PgPool) {
+    // ON DELETE RESTRICT on artifacts.artist_id should surface as a 409
+    // Conflict, not a 500 — the user can't delete an artist whose artworks
+    // still exist.
+    let client = TestClient::new(pool);
+
+    let (_, artist) = client
+        .post("/artists", json!({ "display_name": "Has artworks" }))
+        .await;
+    let artist_id = artist["id"].as_str().unwrap();
+
+    client
+        .post(
+            "/artifacts",
+            json!({ "title": "An artwork", "artist_id": artist_id }),
+        )
+        .await;
+
+    let (status, body) = client.delete(&format!("/artists/{artist_id}")).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert!(
+        body["error"].as_str().unwrap().contains("artifacts"),
+        "error should mention artifacts, got: {body}"
+    );
+}

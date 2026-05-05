@@ -84,7 +84,20 @@ pub async fn update(pool: &PgPool, id: Uuid, input: ArtistInput) -> AppResult<Ar
 pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
     let result = sqlx::query!("DELETE FROM artists WHERE id = $1", id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|err| {
+            // Postgres SQLSTATE 23503 = foreign_key_violation. Surface as a
+            // 409 Conflict ("you can't delete this artist while their
+            // artifacts still exist") instead of a generic 500.
+            if let sqlx::Error::Database(db_err) = &err {
+                if db_err.code().as_deref() == Some("23503") {
+                    return AppError::Conflict(
+                        "cannot delete artist while artifacts reference them".into(),
+                    );
+                }
+            }
+            AppError::Database(err)
+        })?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound);

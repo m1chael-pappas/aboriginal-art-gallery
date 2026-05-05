@@ -19,7 +19,8 @@
       "name": "Base Environment",
       "data": {
         "base_url": "http://localhost:8080",
-        "artist_id": "00000000-0000-0000-0000-000000000000"
+        "artist_id": "00000000-0000-0000-0000-000000000000",
+        "artifact_id": "00000000-0000-0000-0000-000000000000"
       },
       "color": null,
       "isPrivate": false,
@@ -159,6 +160,143 @@
       "name": "DELETE /artists/:id",
       "method": "DELETE",
       "url": "{{ _.base_url }}/artists/{{ _.artist_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -60
+    },
+    {
+      "_id": "fld_artifacts",
+      "_type": "request_group",
+      "parentId": "wrk_aag",
+      "name": "Artifacts",
+      "description": "Artworks. Each artifact references an artist by id — set the artist_id environment variable first (POST an artist if needed). After creating an artifact, copy its id into the artifact_id env variable to exercise GET/PUT/DELETE.",
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_artifacts_list",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "GET /artifacts",
+      "method": "GET",
+      "url": "{{ _.base_url }}/artifacts",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -100
+    },
+    {
+      "_id": "req_artifacts_get",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "GET /artifacts/:id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/artifacts/{{ _.artifact_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -90
+    },
+    {
+      "_id": "req_artifacts_create",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "POST /artifacts",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artifacts",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Earth's Creation\",\n  \"artist_id\": \"{{ _.artist_id }}\",\n  \"art_type\": \"painting\",\n  \"art_style\": \"Western Desert\",\n  \"medium\": \"Synthetic polymer paint on canvas\",\n  \"year_created\": 1994,\n  \"height_cm\": 275,\n  \"width_cm\": 632,\n  \"description\": \"A monumental four-panel painting.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -80
+    },
+    {
+      "_id": "req_artifacts_create_unknown_artist",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "POST /artifacts (invalid: unknown artist_id)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artifacts",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Should Fail\",\n  \"artist_id\": \"00000000-0000-0000-0000-000000000000\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -75
+    },
+    {
+      "_id": "req_artifacts_create_empty_title",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "POST /artifacts (invalid: empty title)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artifacts",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"   \",\n  \"artist_id\": \"{{ _.artist_id }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -73
+    },
+    {
+      "_id": "req_artifacts_create_negative_dim",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "POST /artifacts (invalid: negative dimension)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/artifacts",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Bad Dims\",\n  \"artist_id\": \"{{ _.artist_id }}\",\n  \"height_cm\": -1\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -71
+    },
+    {
+      "_id": "req_artifacts_update",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "PUT /artifacts/:id",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/artifacts/{{ _.artifact_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Earth's Creation (revised)\",\n  \"artist_id\": \"{{ _.artist_id }}\",\n  \"year_created\": 1994,\n  \"description\": \"Updated description.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -70
+    },
+    {
+      "_id": "req_artifacts_delete",
+      "_type": "request",
+      "parentId": "fld_artifacts",
+      "name": "DELETE /artifacts/:id",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/artifacts/{{ _.artifact_id }}",
       "body": {},
       "parameters": [],
       "headers": [],
