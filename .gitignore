@@ -22,6 +22,11 @@
 # OS
 .DS_Store
 Thumbs.db
+# WSL/Windows download metadata
+*:Zone.Identifier
+
+# Local-only design references (not part of the project)
+/design_handoff_aboriginal_art_gallery/
 
 # Logs
 *.log
