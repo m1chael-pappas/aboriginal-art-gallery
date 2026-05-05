@@ -1,60 +1,88 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useArtistsStore } from '@/stores/artists'
-import type { Artist } from '@/api/types'
+import { useArtifactsStore } from '@/stores/artifacts'
+import { useTribesStore } from '@/stores/tribes'
 
-const store = useArtistsStore()
-onMounted(() => store.fetchAll())
+const artists = useArtistsStore()
+const artifacts = useArtifactsStore()
+const tribes = useTribesStore()
 
-function formatLifespan(a: Artist): string {
-  if (a.birth_year === null && a.death_year === null) return ''
-  const birth = a.birth_year ?? '?'
-  const death = a.death_year ?? 'present'
-  return `${birth} – ${death}`
+onMounted(() => {
+  artists.fetchAll()
+  artifacts.fetchAll()
+  tribes.fetchAll()
+})
+
+const tribeNameById = computed(() => {
+  const map = new Map<string, string>()
+  for (const t of tribes.items) map.set(t.id, t.name)
+  return map
+})
+
+const worksByArtistId = computed(() => {
+  const counts = new Map<string, number>()
+  for (const a of artifacts.items) {
+    counts.set(a.artist_id, (counts.get(a.artist_id) ?? 0) + 1)
+  }
+  return counts
+})
+
+function era(birth: number | null, death: number | null): string {
+  if (birth === null && death === null) return '—'
+  return `${birth ?? '?'}–${death ?? 'present'}`
+}
+
+function pad(n: number): string {
+  return String(n).padStart(3, '0')
 }
 </script>
 
 <template>
   <div>
-    <div class="flex items-baseline justify-between mb-6">
-      <h1 class="text-2xl font-semibold text-stone-900">Artists</h1>
-      <span class="text-sm text-stone-500">
-        {{ store.items.length }} {{ store.items.length === 1 ? 'artist' : 'artists' }}
-      </span>
+    <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">
+      index · {{ artists.items.length }} {{ artists.items.length === 1 ? 'entry' : 'entries' }}
     </div>
+    <h1 class="text-3xl font-medium text-ink mb-8">Artists</h1>
 
-    <div v-if="store.loading" class="text-stone-500">Loading…</div>
+    <div v-if="artists.loading" class="text-sm text-muted">Loading…</div>
 
     <div
-      v-else-if="store.error"
-      class="p-4 border border-red-200 bg-red-50 rounded-lg text-red-800"
+      v-else-if="artists.error"
+      class="p-4 border border-ochre/40 bg-ochre/5 text-sm text-ink"
     >
-      {{ store.error }}
+      {{ artists.error }}
     </div>
 
-    <div v-else-if="store.items.length === 0" class="text-stone-500">
-      No artists yet. Create one via Insomnia.
+    <div v-else-if="artists.items.length === 0" class="text-sm text-muted">
+      No artists in the archive yet.
     </div>
 
-    <ul v-else class="grid gap-3">
-      <li
-        v-for="artist in store.items"
-        :key="artist.id"
-        class="p-4 border border-stone-200 rounded-lg bg-white"
+    <div v-else>
+      <div
+        class="grid grid-cols-[50px_2fr_1.2fr_1fr_60px] gap-3 pb-2 border-b border-line text-[10px] font-mono uppercase tracking-wider text-muted"
       >
-        <h3 class="font-semibold text-stone-900">{{ artist.display_name }}</h3>
-        <p class="text-sm text-stone-600 mt-1">
-          <span v-if="formatLifespan(artist)">{{ formatLifespan(artist) }}</span>
-          <span v-if="formatLifespan(artist) && artist.region"> · </span>
-          <span v-if="artist.region">{{ artist.region }}</span>
-        </p>
-        <p
-          v-if="artist.biography"
-          class="text-sm text-stone-500 mt-2 line-clamp-2"
-        >
-          {{ artist.biography }}
-        </p>
-      </li>
-    </ul>
+        <span>#</span>
+        <span>name</span>
+        <span>tribe</span>
+        <span>era</span>
+        <span class="text-right">works</span>
+      </div>
+      <div
+        v-for="(artist, i) in artists.items"
+        :key="artist.id"
+        class="grid grid-cols-[50px_2fr_1.2fr_1fr_60px] gap-3 py-3 border-b border-dashed border-line items-center text-sm"
+      >
+        <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
+        <span class="text-ink">{{ artist.display_name }}</span>
+        <span class="text-muted">{{ tribeNameById.get(artist.tribe_id ?? '') ?? '—' }}</span>
+        <span class="font-mono text-xs text-ink">
+          {{ era(artist.birth_year, artist.death_year) }}
+        </span>
+        <span class="font-mono text-xs text-ochre text-right">
+          {{ worksByArtistId.get(artist.id) ?? 0 }}
+        </span>
+      </div>
+    </div>
   </div>
 </template>

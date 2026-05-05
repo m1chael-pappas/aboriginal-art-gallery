@@ -1,48 +1,91 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useArtistsStore } from '@/stores/artists'
+import { useArtifactsStore } from '@/stores/artifacts'
+import { useTribesStore } from '@/stores/tribes'
 
-const sections = [
+const artists = useArtistsStore()
+const artifacts = useArtifactsStore()
+const tribes = useTribesStore()
+
+onMounted(() => {
+  artists.fetchAll()
+  artifacts.fetchAll()
+  tribes.fetchAll()
+})
+
+const routes = computed(() => [
   {
-    name: 'Artists',
-    description:
-      'Aboriginal Australian artists — biographies, life dates, and tribal affiliation.',
-    to: '/artists',
+    path: '/artists',
+    label: 'artists',
+    count: artists.items.length,
+    description: 'individual makers, biographical entries',
   },
   {
-    name: 'Artifacts',
-    description:
-      'The artworks themselves — paintings, sculptures, weavings, and traditional pieces.',
-    to: '/artifacts',
+    path: '/artifacts',
+    label: 'artifacts',
+    count: artifacts.items.length,
+    description: 'objects, paintings, and ceremonial pieces',
   },
   {
-    name: 'Tribes',
-    description:
-      'Aboriginal tribes and language groups across Australia, with cultural context.',
-    to: '/tribes',
+    path: '/tribes',
+    label: 'tribes',
+    count: tribes.items.length,
+    description: 'language groups & Country',
   },
-]
+])
 </script>
 
 <template>
-  <div class="space-y-8">
-    <div>
-      <h1 class="text-3xl font-bold tracking-tight text-stone-900">
-        Aboriginal Art Gallery
-      </h1>
-      <p class="mt-2 text-stone-600">
-        Browse artists, their works, and the tribal context they emerge from.
-      </p>
+  <div>
+    <div class="grid lg:grid-cols-[1fr_280px] gap-10 mb-12">
+      <div>
+        <div
+          class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3"
+        >
+          001 / about
+        </div>
+        <h1
+          class="text-3xl font-medium text-ink leading-tight max-w-2xl"
+        >
+          A digital archive of Aboriginal art, artifacts and the peoples behind them.
+        </h1>
+        <p
+          class="mt-5 text-sm text-muted max-w-xl leading-relaxed"
+        >
+          A curated set of works from across the continent — paintings, sculptures,
+          and traditional pieces — alongside the artists and tribes that produced them.
+        </p>
+      </div>
+      <div
+        class="border border-line aspect-[4/3] flex items-center justify-center"
+      >
+        <span class="font-mono text-[10px] tracking-wider uppercase text-muted">
+          archive photo
+        </span>
+      </div>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <RouterLink v-for="section in sections" :key="section.name" :to="section.to"
-        class="block p-6 border border-stone-200 rounded-lg bg-white hover:shadow-sm hover:border-stone-300 transition">
-        <h2 class="text-lg font-semibold text-stone-900">
-          {{ section.name }}
-        </h2>
-        <p class="mt-1 text-sm text-stone-600">
-          {{ section.description }}
-        </p>
+    <div>
+      <div
+        class="grid grid-cols-[1fr_80px_2fr_40px] gap-3 pb-2 border-b border-line text-[10px] font-mono uppercase tracking-wider text-muted"
+      >
+        <span>route</span>
+        <span>count</span>
+        <span>description</span>
+        <span></span>
+      </div>
+      <RouterLink
+        v-for="r in routes"
+        :key="r.path"
+        :to="r.path"
+        class="grid grid-cols-[1fr_80px_2fr_40px] gap-3 py-3 border-b border-dashed border-line items-center text-sm hover:bg-ochre/5 transition-colors"
+      >
+        <span class="font-mono text-ink">/{{ r.label }}</span>
+        <span class="font-mono text-ink">{{ r.count }}</span>
+        <span class="text-muted">{{ r.description }}</span>
+        <span class="font-mono text-ochre">→</span>
       </RouterLink>
     </div>
   </div>

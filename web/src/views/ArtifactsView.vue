@@ -1,73 +1,84 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useArtifactsStore } from '@/stores/artifacts'
+import { useArtistsStore } from '@/stores/artists'
+import { useTribesStore } from '@/stores/tribes'
 
-const store = useArtifactsStore()
-onMounted(() => store.fetchAll())
+const artifacts = useArtifactsStore()
+const artists = useArtistsStore()
+const tribes = useTribesStore()
 
-function formatDimensions(
-  h: number | null,
-  w: number | null,
-  d: number | null,
-): string {
-  const parts = [h, w, d].filter((v): v is number => v !== null)
-  if (parts.length === 0) return ''
-  return `${parts.join(' × ')} cm`
+onMounted(() => {
+  artifacts.fetchAll()
+  artists.fetchAll()
+  tribes.fetchAll()
+})
+
+const artistTribeId = computed(() => {
+  const map = new Map<string, string | null>()
+  for (const a of artists.items) map.set(a.id, a.tribe_id)
+  return map
+})
+
+const tribeNameById = computed(() => {
+  const map = new Map<string, string>()
+  for (const t of tribes.items) map.set(t.id, t.name)
+  return map
+})
+
+function tribeOf(artistId: string): string {
+  const tid = artistTribeId.value.get(artistId)
+  if (!tid) return ''
+  return tribeNameById.value.get(tid) ?? ''
+}
+
+function pad(n: number): string {
+  return `A-${String(n).padStart(3, '0')}`
 }
 </script>
 
 <template>
   <div>
-    <div class="flex items-baseline justify-between mb-6">
-      <h1 class="text-2xl font-semibold text-stone-900">Artifacts</h1>
-      <span class="text-sm text-stone-500">
-        {{ store.items.length }} {{ store.items.length === 1 ? 'artifact' : 'artifacts' }}
-      </span>
+    <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">
+      collection · {{ artifacts.items.length }}
+      {{ artifacts.items.length === 1 ? 'object' : 'objects' }}
     </div>
+    <h1 class="text-3xl font-medium text-ink mb-8">Artifacts</h1>
 
-    <div v-if="store.loading" class="text-stone-500">Loading…</div>
+    <div v-if="artifacts.loading" class="text-sm text-muted">Loading…</div>
 
     <div
-      v-else-if="store.error"
-      class="p-4 border border-red-200 bg-red-50 rounded-lg text-red-800"
+      v-else-if="artifacts.error"
+      class="p-4 border border-ochre/40 bg-ochre/5 text-sm text-ink"
     >
-      {{ store.error }}
+      {{ artifacts.error }}
     </div>
 
-    <div v-else-if="store.items.length === 0" class="text-stone-500">
-      No artifacts yet. Create one via Insomnia.
+    <div v-else-if="artifacts.items.length === 0" class="text-sm text-muted">
+      No artifacts in the archive yet.
     </div>
 
-    <ul v-else class="grid gap-3">
-      <li
-        v-for="artifact in store.items"
+    <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <article
+        v-for="(artifact, i) in artifacts.items"
         :key="artifact.id"
-        class="p-4 border border-stone-200 rounded-lg bg-white"
+        class="border border-dashed border-line p-3 flex flex-col gap-2"
       >
-        <div class="flex items-baseline justify-between gap-3">
-          <h3 class="font-semibold text-stone-900">{{ artifact.title }}</h3>
-          <span
-            v-if="artifact.year_created"
-            class="text-sm text-stone-500 shrink-0"
-          >
-            {{ artifact.year_created }}
-          </span>
-        </div>
-        <p class="text-sm text-stone-600 mt-1">
-          <span v-if="artifact.art_type">{{ artifact.art_type }}</span>
-          <span v-if="artifact.art_type && artifact.art_style"> · </span>
-          <span v-if="artifact.art_style">{{ artifact.art_style }}</span>
-        </p>
-        <p v-if="artifact.medium" class="text-sm text-stone-500 mt-1">
-          {{ artifact.medium }}
-        </p>
-        <p
-          v-if="formatDimensions(artifact.height_cm, artifact.width_cm, artifact.depth_cm)"
-          class="text-sm text-stone-500 mt-1"
+        <div
+          class="aspect-[4/3] border border-line flex items-center justify-center"
         >
-          {{ formatDimensions(artifact.height_cm, artifact.width_cm, artifact.depth_cm) }}
-        </p>
-      </li>
-    </ul>
+          <span class="font-mono text-[10px] text-muted">image</span>
+        </div>
+        <div class="font-mono text-[11px] text-ochre">{{ pad(i + 1) }}</div>
+        <div class="text-sm font-medium text-ink leading-snug">
+          {{ artifact.title }}
+        </div>
+        <div class="font-mono text-[10px] text-muted">
+          <span v-if="tribeOf(artifact.artist_id)">{{ tribeOf(artifact.artist_id) }}</span>
+          <span v-if="tribeOf(artifact.artist_id) && artifact.year_created"> · </span>
+          <span v-if="artifact.year_created">{{ artifact.year_created }}</span>
+        </div>
+      </article>
+    </div>
   </div>
 </template>
