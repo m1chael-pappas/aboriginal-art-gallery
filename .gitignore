@@ -1,0 +1,27 @@
+# Rust
+/api/target
+**/*.rs.bk
+
+# Node
+/web/node_modules
+/web/dist
+/web/.vite
+/web/.nuxt
+
+# Env
+.env
+.env.local
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
