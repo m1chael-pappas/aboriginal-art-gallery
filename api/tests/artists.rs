@@ -189,6 +189,49 @@ async fn delete_artist_unknown_id_returns_404(pool: PgPool) {
 }
 
 #[sqlx::test]
+async fn create_artist_with_tribe_links_them(pool: PgPool) {
+    let client = TestClient::new(pool);
+
+    let (_, tribe) = client.post("/tribes", json!({ "name": "Pintupi" })).await;
+    let tribe_id = tribe["id"].as_str().unwrap();
+
+    let (status, body) = client
+        .post(
+            "/artists",
+            json!({
+                "display_name": "Affiliated Artist",
+                "tribe_id": tribe_id
+            }),
+        )
+        .await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(body["tribe_id"], tribe_id);
+}
+
+#[sqlx::test]
+async fn create_artist_rejects_unknown_tribe(pool: PgPool) {
+    let client = TestClient::new(pool);
+    let bogus = Uuid::new_v4();
+
+    let (status, body) = client
+        .post(
+            "/artists",
+            json!({
+                "display_name": "X",
+                "tribe_id": bogus
+            }),
+        )
+        .await;
+
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(
+        body["error"].as_str().unwrap().contains("tribe"),
+        "error should mention tribe, got: {body}"
+    );
+}
+
+#[sqlx::test]
 async fn delete_artist_with_artifacts_returns_409(pool: PgPool) {
     // ON DELETE RESTRICT on artifacts.artist_id should surface as a 409
     // Conflict, not a 500 — the user can't delete an artist whose artworks

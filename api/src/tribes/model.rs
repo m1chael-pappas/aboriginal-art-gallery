@@ -1,0 +1,31 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+#[derive(Debug, Serialize)]
+pub struct Tribe {
+    pub id: Uuid,
+    pub name: String,
+    pub region: Option<String>,
+    pub language_group: Option<String>,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TribeInput {
+    pub name: String,
+    pub region: Option<String>,
+    pub language_group: Option<String>,
+    pub description: Option<String>,
+}
+
+impl TribeInput {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.name.trim().is_empty() {
+            return Err("name cannot be empty".into());
+        }
+        Ok(())
+    }
+}

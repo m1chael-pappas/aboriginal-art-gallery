@@ -9,7 +9,7 @@ pub async fn list(pool: &PgPool) -> AppResult<Vec<Artist>> {
         Artist,
         r#"
         SELECT id, display_name, birth_year, death_year, region, biography,
-               created_at, updated_at
+               tribe_id, created_at, updated_at
         FROM artists
         ORDER BY display_name
         "#
@@ -24,7 +24,7 @@ pub async fn find(pool: &PgPool, id: Uuid) -> AppResult<Artist> {
         Artist,
         r#"
         SELECT id, display_name, birth_year, death_year, region, biography,
-               created_at, updated_at
+               tribe_id, created_at, updated_at
         FROM artists
         WHERE id = $1
         "#,
@@ -36,23 +36,25 @@ pub async fn find(pool: &PgPool, id: Uuid) -> AppResult<Artist> {
 }
 
 pub async fn create(pool: &PgPool, input: ArtistInput) -> AppResult<Artist> {
-    let artist = sqlx::query_as!(
+    sqlx::query_as!(
         Artist,
         r#"
-        INSERT INTO artists (display_name, birth_year, death_year, region, biography)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO artists (display_name, birth_year, death_year, region,
+                             biography, tribe_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id, display_name, birth_year, death_year, region, biography,
-                  created_at, updated_at
+                  tribe_id, created_at, updated_at
         "#,
         input.display_name,
         input.birth_year,
         input.death_year,
         input.region,
         input.biography,
+        input.tribe_id,
     )
     .fetch_one(pool)
-    .await?;
-    Ok(artist)
+    .await
+    .map_err(map_tribe_fk_violation)
 }
 
 pub async fn update(pool: &PgPool, id: Uuid, input: ArtistInput) -> AppResult<Artist> {
@@ -64,10 +66,11 @@ pub async fn update(pool: &PgPool, id: Uuid, input: ArtistInput) -> AppResult<Ar
             birth_year   = $3,
             death_year   = $4,
             region       = $5,
-            biography    = $6
+            biography    = $6,
+            tribe_id     = $7
         WHERE id = $1
         RETURNING id, display_name, birth_year, death_year, region, biography,
-                  created_at, updated_at
+                  tribe_id, created_at, updated_at
         "#,
         id,
         input.display_name,
@@ -75,9 +78,11 @@ pub async fn update(pool: &PgPool, id: Uuid, input: ArtistInput) -> AppResult<Ar
         input.death_year,
         input.region,
         input.biography,
+        input.tribe_id,
     )
     .fetch_optional(pool)
-    .await?
+    .await
+    .map_err(map_tribe_fk_violation)?
     .ok_or(AppError::NotFound)
 }
 
@@ -86,9 +91,13 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
         .execute(pool)
         .await
         .map_err(|err| {
-            // Postgres SQLSTATE 23503 = foreign_key_violation. Surface as a
-            // 409 Conflict ("you can't delete this artist while their
-            // artifacts still exist") instead of a generic 500.
+            // Postgres SQLSTATE 23503 = foreign_key_violation. Here it means
+            // artifacts still reference this artist (artifacts.artist_id is
+            // ON DELETE RESTRICT). Surface as a 409 Conflict.
+            //
+            // Note: the symmetric incoming FK (artists.tribe_id) is ON DELETE
+            // SET NULL, so deleting a tribe never gets here — no other 23503
+            // path needs disambiguating.
             if let sqlx::Error::Database(db_err) = &err {
                 if db_err.code().as_deref() == Some("23503") {
                     return AppError::Conflict(
@@ -103,4 +112,17 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
         return Err(AppError::NotFound);
     }
     Ok(())
+}
+
+// On create/update, a bad input.tribe_id is the only way to trigger an
+// outgoing FK violation (artists.tribe_id -> tribes.id). Translate to
+// AppError::Validation (400) — the user's payload referenced a tribe that
+// doesn't exist.
+fn map_tribe_fk_violation(err: sqlx::Error) -> AppError {
+    if let sqlx::Error::Database(db_err) = &err {
+        if db_err.code().as_deref() == Some("23503") {
+            return AppError::Validation("tribe_id: tribe not found".into());
+        }
+    }
+    AppError::Database(err)
 }

@@ -20,7 +20,8 @@
       "data": {
         "base_url": "http://localhost:8080",
         "artist_id": "00000000-0000-0000-0000-000000000000",
-        "artifact_id": "00000000-0000-0000-0000-000000000000"
+        "artifact_id": "00000000-0000-0000-0000-000000000000",
+        "tribe_id": "00000000-0000-0000-0000-000000000000"
       },
       "color": null,
       "isPrivate": false,
@@ -297,6 +298,125 @@
       "name": "DELETE /artifacts/:id",
       "method": "DELETE",
       "url": "{{ _.base_url }}/artifacts/{{ _.artifact_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -60
+    },
+    {
+      "_id": "fld_tribes",
+      "_type": "request_group",
+      "parentId": "wrk_aag",
+      "name": "Tribes",
+      "description": "Aboriginal tribes / language groups. After POST, copy the returned id into the tribe_id environment variable to exercise GET/PUT/DELETE, or to attach an artist via POST /artists with tribe_id.",
+      "metaSortKey": 200
+    },
+    {
+      "_id": "req_tribes_list",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "GET /tribes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tribes",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -100
+    },
+    {
+      "_id": "req_tribes_get",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "GET /tribes/:id",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tribes/{{ _.tribe_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -90
+    },
+    {
+      "_id": "req_tribes_create",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "POST /tribes",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tribes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pintupi\",\n  \"region\": \"Western Desert\",\n  \"language_group\": \"Western Desert language\",\n  \"description\": \"Aboriginal Australian people from the Gibson Desert region of Western Australia and the Northern Territory.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -80
+    },
+    {
+      "_id": "req_tribes_create_empty_name",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "POST /tribes (invalid: empty name)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tribes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"   \"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -75
+    },
+    {
+      "_id": "req_tribes_create_duplicate",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "POST /tribes (invalid: duplicate name)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tribes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pintupi\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -73
+    },
+    {
+      "_id": "req_tribes_update",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "PUT /tribes/:id",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/tribes/{{ _.tribe_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pintupi\",\n  \"region\": \"Western Desert (updated)\",\n  \"language_group\": \"Western Desert language\",\n  \"description\": \"Updated description.\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "authentication": {},
+      "metaSortKey": -70
+    },
+    {
+      "_id": "req_tribes_delete",
+      "_type": "request",
+      "parentId": "fld_tribes",
+      "name": "DELETE /tribes/:id",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/tribes/{{ _.tribe_id }}",
       "body": {},
       "parameters": [],
       "headers": [],

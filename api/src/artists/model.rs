@@ -10,6 +10,7 @@ pub struct Artist {
     pub death_year: Option<i16>,
     pub region: Option<String>,
     pub biography: Option<String>,
+    pub tribe_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -21,6 +22,7 @@ pub struct ArtistInput {
     pub death_year: Option<i16>,
     pub region: Option<String>,
     pub biography: Option<String>,
+    pub tribe_id: Option<Uuid>,
 }
 
 impl ArtistInput {
