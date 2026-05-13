@@ -30,6 +30,8 @@ Thumbs.db
 
 # Local-only working notes (not a project artifact)
 /TODO.md
+/PLAN.md
+/docs/brief.md
 
 # Logs
 *.log
