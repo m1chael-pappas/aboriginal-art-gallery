@@ -28,7 +28,18 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-async fn register(
+#[utoipa::path(
+    post,
+    path = "/auth/register",
+    tag = "auth",
+    request_body = RegisterInput,
+    responses(
+        (status = 201, description = "Account created (role = User) and signed in", body = AuthResponse),
+        (status = 400, description = "Validation failed (bad email, password < 8 chars)"),
+        (status = 409, description = "Email already in use"),
+    ),
+)]
+pub(crate) async fn register(
     State(state): State<AppState>,
     Json(input): Json<RegisterInput>,
 ) -> AppResult<(StatusCode, Json<AuthResponse>)> {
@@ -43,7 +54,18 @@ async fn register(
     Ok((StatusCode::CREATED, Json(AuthResponse { token, user })))
 }
 
-async fn login(
+#[utoipa::path(
+    post,
+    path = "/auth/login",
+    tag = "auth",
+    request_body = LoginInput,
+    responses(
+        (status = 200, description = "Credentials accepted; token + user returned", body = AuthResponse),
+        (status = 400, description = "Empty email or password"),
+        (status = 401, description = "Invalid credentials"),
+    ),
+)]
+pub(crate) async fn login(
     State(state): State<AppState>,
     Json(input): Json<LoginInput>,
 ) -> AppResult<Json<AuthResponse>> {
@@ -68,17 +90,54 @@ async fn login(
     Ok(Json(AuthResponse { token, user }))
 }
 
-async fn me(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<User>> {
+#[utoipa::path(
+    get,
+    path = "/auth/me",
+    tag = "auth",
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, description = "Current user (sub from the JWT)", body = User),
+        (status = 401, description = "Missing or invalid bearer token"),
+    ),
+)]
+pub(crate) async fn me(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<User>> {
     let user = repo::find(&state.pool, auth.claims.sub).await?;
     Ok(Json(user))
 }
 
-async fn list_users(State(state): State<AppState>, _: AdminUser) -> AppResult<Json<Vec<User>>> {
+#[utoipa::path(
+    get,
+    path = "/users",
+    tag = "users",
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, description = "All users (admin only)", body = Vec<User>),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+    ),
+)]
+pub(crate) async fn list_users(
+    State(state): State<AppState>,
+    _: AdminUser,
+) -> AppResult<Json<Vec<User>>> {
     let users = repo::list(&state.pool).await?;
     Ok(Json(users))
 }
 
-async fn get_user(
+#[utoipa::path(
+    get,
+    path = "/users/{id}",
+    tag = "users",
+    params(("id" = Uuid, Path, description = "User UUID")),
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, body = User),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Not admin and not your own record"),
+        (status = 404, description = "No user with that id"),
+    ),
+)]
+pub(crate) async fn get_user(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(id): Path<Uuid>,
@@ -88,7 +147,23 @@ async fn get_user(
     Ok(Json(user))
 }
 
-async fn update_user(
+#[utoipa::path(
+    put,
+    path = "/users/{id}",
+    tag = "users",
+    params(("id" = Uuid, Path, description = "User UUID")),
+    request_body = UserUpdate,
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, body = User),
+        (status = 400, description = "Validation failed"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Not admin and not your own record, or non-admin trying to change role"),
+        (status = 404, description = "No user with that id"),
+        (status = 409, description = "Email already in use"),
+    ),
+)]
+pub(crate) async fn update_user(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(id): Path<Uuid>,
@@ -124,7 +199,21 @@ async fn update_user(
     Ok(Json(updated))
 }
 
-async fn delete_user(
+#[utoipa::path(
+    delete,
+    path = "/users/{id}",
+    tag = "users",
+    params(("id" = Uuid, Path, description = "User UUID")),
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 204, description = "User deleted"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 404, description = "No user with that id"),
+        (status = 409, description = "Admins cannot delete their own account"),
+    ),
+)]
+pub(crate) async fn delete_user(
     State(state): State<AppState>,
     admin: AdminUser,
     Path(id): Path<Uuid>,

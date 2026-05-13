@@ -27,12 +27,30 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-async fn list_artifacts(State(state): State<AppState>) -> AppResult<Json<Vec<Artifact>>> {
+#[utoipa::path(
+    get,
+    path = "/artifacts",
+    tag = "artifacts",
+    responses(
+        (status = 200, description = "All artifacts in the collection", body = Vec<Artifact>),
+    ),
+)]
+pub(crate) async fn list_artifacts(State(state): State<AppState>) -> AppResult<Json<Vec<Artifact>>> {
     let artifacts = repo::list(&state.pool).await?;
     Ok(Json(artifacts))
 }
 
-async fn get_artifact(
+#[utoipa::path(
+    get,
+    path = "/artifacts/{id}",
+    tag = "artifacts",
+    params(("id" = Uuid, Path, description = "Artifact UUID")),
+    responses(
+        (status = 200, body = Artifact),
+        (status = 404, description = "No artifact with that id"),
+    ),
+)]
+pub(crate) async fn get_artifact(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<Artifact>> {
@@ -40,7 +58,20 @@ async fn get_artifact(
     Ok(Json(artifact))
 }
 
-async fn create_artifact(
+#[utoipa::path(
+    post,
+    path = "/artifacts",
+    tag = "artifacts",
+    request_body = ArtifactInput,
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 201, body = Artifact),
+        (status = 400, description = "Validation failed (empty title, non-positive dimension, unknown artist_id)"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+    ),
+)]
+pub(crate) async fn create_artifact(
     State(state): State<AppState>,
     _: AdminUser,
     Json(input): Json<ArtifactInput>,
@@ -50,7 +81,22 @@ async fn create_artifact(
     Ok((StatusCode::CREATED, Json(artifact)))
 }
 
-async fn update_artifact(
+#[utoipa::path(
+    put,
+    path = "/artifacts/{id}",
+    tag = "artifacts",
+    params(("id" = Uuid, Path, description = "Artifact UUID")),
+    request_body = ArtifactInput,
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, body = Artifact),
+        (status = 400, description = "Validation failed"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 404, description = "No artifact with that id"),
+    ),
+)]
+pub(crate) async fn update_artifact(
     State(state): State<AppState>,
     _: AdminUser,
     Path(id): Path<Uuid>,
@@ -61,7 +107,20 @@ async fn update_artifact(
     Ok(Json(artifact))
 }
 
-async fn delete_artifact(
+#[utoipa::path(
+    delete,
+    path = "/artifacts/{id}",
+    tag = "artifacts",
+    params(("id" = Uuid, Path, description = "Artifact UUID")),
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 204, description = "Artifact deleted"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 404, description = "No artifact with that id"),
+    ),
+)]
+pub(crate) async fn delete_artifact(
     State(state): State<AppState>,
     _: AdminUser,
     Path(id): Path<Uuid>,

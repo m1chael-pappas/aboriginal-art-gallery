@@ -1,5 +1,5 @@
 pub mod model;
 mod repo;
-mod routes;
+pub(crate) mod routes;
 
 pub use routes::router;

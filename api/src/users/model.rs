@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::auth::Role;
@@ -7,25 +8,29 @@ use crate::auth::Role;
 /// User as stored. `password_hash` is held in the struct so the repo doesn't
 /// need a second fetch on login, but `#[serde(skip_serializing)]` keeps it
 /// out of every API response — clients only ever see the safe fields.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct User {
     pub id: Uuid,
     pub email: String,
     #[serde(skip_serializing)]
+    #[schema(value_type = String, write_only = true)]
     pub password_hash: String,
     pub role: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct RegisterInput {
+    #[schema(example = "alice@example.com")]
     pub email: String,
+    #[schema(example = "correct-horse-battery-staple", min_length = 8)]
     pub password: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct LoginInput {
+    #[schema(example = "alice@example.com")]
     pub email: String,
     pub password: String,
 }
@@ -33,7 +38,7 @@ pub struct LoginInput {
 /// What we send back from `/auth/register` and `/auth/login` — the issued
 /// JWT plus the (sanitised) user so the FE can stash both without a second
 /// `/auth/me` round-trip.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct AuthResponse {
     pub token: String,
     pub user: User,
@@ -42,7 +47,7 @@ pub struct AuthResponse {
 /// Patch shape for `PUT /users/:id`. Every field is optional; the repo applies
 /// `COALESCE`, leaving omitted fields untouched. `role` is admin-only — the
 /// handler enforces that before calling the repo.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UserUpdate {
     pub email: Option<String>,
     pub password: Option<String>,

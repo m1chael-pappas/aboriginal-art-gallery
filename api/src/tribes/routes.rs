@@ -25,12 +25,30 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-async fn list_tribes(State(state): State<AppState>) -> AppResult<Json<Vec<Tribe>>> {
+#[utoipa::path(
+    get,
+    path = "/tribes",
+    tag = "tribes",
+    responses(
+        (status = 200, description = "All tribes, ordered by name", body = Vec<Tribe>),
+    ),
+)]
+pub(crate) async fn list_tribes(State(state): State<AppState>) -> AppResult<Json<Vec<Tribe>>> {
     let tribes = repo::list(&state.pool).await?;
     Ok(Json(tribes))
 }
 
-async fn get_tribe(
+#[utoipa::path(
+    get,
+    path = "/tribes/{id}",
+    tag = "tribes",
+    params(("id" = Uuid, Path, description = "Tribe UUID")),
+    responses(
+        (status = 200, body = Tribe),
+        (status = 404, description = "No tribe with that id"),
+    ),
+)]
+pub(crate) async fn get_tribe(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<Tribe>> {
@@ -38,7 +56,21 @@ async fn get_tribe(
     Ok(Json(tribe))
 }
 
-async fn create_tribe(
+#[utoipa::path(
+    post,
+    path = "/tribes",
+    tag = "tribes",
+    request_body = TribeInput,
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 201, body = Tribe),
+        (status = 400, description = "Validation failed (empty name)"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 409, description = "Tribe name already exists"),
+    ),
+)]
+pub(crate) async fn create_tribe(
     State(state): State<AppState>,
     _: AdminUser,
     Json(input): Json<TribeInput>,
@@ -48,7 +80,23 @@ async fn create_tribe(
     Ok((StatusCode::CREATED, Json(tribe)))
 }
 
-async fn update_tribe(
+#[utoipa::path(
+    put,
+    path = "/tribes/{id}",
+    tag = "tribes",
+    params(("id" = Uuid, Path, description = "Tribe UUID")),
+    request_body = TribeInput,
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, body = Tribe),
+        (status = 400, description = "Validation failed"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 404, description = "No tribe with that id"),
+        (status = 409, description = "Tribe name already exists"),
+    ),
+)]
+pub(crate) async fn update_tribe(
     State(state): State<AppState>,
     _: AdminUser,
     Path(id): Path<Uuid>,
@@ -59,7 +107,20 @@ async fn update_tribe(
     Ok(Json(tribe))
 }
 
-async fn delete_tribe(
+#[utoipa::path(
+    delete,
+    path = "/tribes/{id}",
+    tag = "tribes",
+    params(("id" = Uuid, Path, description = "Tribe UUID")),
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 204, description = "Tribe deleted (artists.tribe_id set to NULL)"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Admin role required"),
+        (status = 404, description = "No tribe with that id"),
+    ),
+)]
+pub(crate) async fn delete_tribe(
     State(state): State<AppState>,
     _: AdminUser,
     Path(id): Path<Uuid>,

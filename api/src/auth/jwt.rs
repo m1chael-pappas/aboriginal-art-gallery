@@ -1,6 +1,7 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
@@ -12,7 +13,7 @@ const TOKEN_TTL_HOURS: i64 = 24;
 /// Roles the app understands. Stored in the DB as plain strings (with a CHECK
 /// constraint), and embedded in the JWT claim of the same name. Keeping it as
 /// an enum on the Rust side gives us exhaustiveness when matching.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub enum Role {
     User,
     Admin,
