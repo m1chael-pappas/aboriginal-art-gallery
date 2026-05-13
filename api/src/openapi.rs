@@ -1,9 +1,9 @@
 //! OpenAPI 3 description for the whole API, plus the Swagger UI mounting.
 //!
-//! Source of truth for the description lives on the handler `#[utoipa::path]`
-//! attributes and the `#[derive(ToSchema)]` impls on the model structs. This
-//! module just stitches them into a single document and registers the JWT
-//! security scheme that protected endpoints reference.
+//! The source of truth for the description lives on the handler
+//! `#[utoipa::path]` attributes and the `#[derive(ToSchema)]` impls on the
+//! model structs. This module just stitches them into a single document and
+//! registers the JWT security scheme that protected endpoints reference.
 
 use utoipa::{
     Modify, OpenApi,
@@ -30,6 +30,8 @@ use crate::{
     },
 };
 
+/// Top-level OpenAPI document. Exposed as JSON at
+/// `/api-docs/openapi.json` and rendered as Swagger UI at `/docs`.
 #[derive(OpenApi)]
 #[openapi(
     info(
@@ -61,6 +63,9 @@ use crate::{
         tribe_routes::create_tribe,
         tribe_routes::update_tribe,
         tribe_routes::delete_tribe,
+        tribe_routes::set_territory,
+        tribe_routes::clear_territory,
+        tribe_routes::search_near,
 
         // Auth + users
         user_routes::register,
@@ -80,7 +85,7 @@ use crate::{
     tags(
         (name = "artists",   description = "Individual makers — biographies, era, tribal affiliation"),
         (name = "artifacts", description = "Objects, paintings, and ceremonial pieces"),
-        (name = "tribes",    description = "Aboriginal peoples, language groups, and Country"),
+        (name = "tribes",    description = "Aboriginal peoples, language groups, and PostGIS territory"),
         (name = "auth",      description = "Register, login, and the current-user endpoint"),
         (name = "users",     description = "Admin-only user management"),
     ),
@@ -89,8 +94,8 @@ use crate::{
 pub struct ApiDoc;
 
 /// Registers the HTTP `Bearer <JWT>` security scheme under the name
-/// `bearer_auth`. Individual `#[utoipa::path]` attributes reference this name
-/// via `security(("bearer_auth" = []))` to mark protected endpoints.
+/// `bearer_auth`. Individual `#[utoipa::path]` attributes reference this
+/// name via `security(("bearer_auth" = []))` to mark protected endpoints.
 struct SecurityAddon;
 
 impl Modify for SecurityAddon {

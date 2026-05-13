@@ -1,8 +1,10 @@
 //! Dev-only data seeder.
 //!
 //! Wipes artifacts/artists/tribes (in FK order) and reinserts a curated set
-//! of well-known Aboriginal artists, their tribes, and notable works. Also
-//! upserts a default admin user so the FE has someone to log in as. Run:
+//! of well-known Aboriginal artists, their tribes, and notable works.
+//! Attaches rough demo polygons to a handful of tribes so the PostGIS
+//! endpoints have something to return, and upserts a default admin user so
+//! the FE has someone to log in as. Run:
 //!
 //!     cargo run --bin seed
 //!
@@ -39,6 +41,9 @@ async fn main() -> anyhow::Result<()> {
     println!("Seeding tribes...");
     let tribes = seed_tribes(&pool).await?;
 
+    println!("Seeding tribe territories (rough demo polygons, not authoritative)...");
+    seed_territories(&pool, &tribes).await?;
+
     println!("Seeding artists...");
     let artists = seed_artists(&pool, &tribes).await?;
 
@@ -60,12 +65,15 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Returned-id + name pair for cross-referencing FK targets between seed
+/// phases (artists ↔ tribes, artifacts ↔ artists).
 #[derive(Clone)]
 struct Seeded {
     id: Uuid,
     name: &'static str,
 }
 
+/// Insert the curated tribe list and return their generated ids.
 async fn seed_tribes(pool: &PgPool) -> anyhow::Result<Vec<Seeded>> {
     let inputs = [
         (
@@ -121,6 +129,8 @@ async fn seed_tribes(pool: &PgPool) -> anyhow::Result<Vec<Seeded>> {
     Ok(out)
 }
 
+/// Insert the curated artist list, looking up each artist's tribe by name
+/// from the previously-seeded list.
 async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Seeded>> {
     let inputs: [(
         &'static str,
@@ -220,6 +230,8 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
     Ok(out)
 }
 
+/// Insert the curated artifact list, looking up each work's artist by name
+/// from the previously-seeded list.
 async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()> {
     let inputs: [(
         &str,
@@ -339,6 +351,50 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
     Ok(())
 }
 
+/// Attach rough bounding-box polygons to a handful of tribes so the PostGIS
+/// endpoints (/tribes/near, /tribes/{id}/territory) have something to return
+/// for demos.
+///
+/// These boxes are intentionally crude — they're big enough to make
+/// `ST_DWithin` queries hit the GiST index in a recognisable way, but they
+/// are **not** authoritative boundaries of traditional Country.
+async fn seed_territories(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<()> {
+    // (name, WKT polygon in lng lat order). Coordinates are EPSG:4326.
+    let territories: [(&str, &str); 3] = [
+        (
+            "Pintupi",
+            "POLYGON((127 -25, 130 -25, 130 -22, 127 -22, 127 -25))",
+        ),
+        (
+            "Yolngu",
+            "POLYGON((134 -13, 137 -13, 137 -11, 134 -11, 134 -13))",
+        ),
+        (
+            "Tiwi",
+            "POLYGON((130 -12, 132 -12, 132 -11, 130 -11, 130 -12))",
+        ),
+    ];
+
+    for (name, wkt) in territories {
+        let Some(id) = find_id(tribes, name) else {
+            continue;
+        };
+        sqlx::query!(
+            r#"
+            UPDATE tribes
+            SET territory = ST_Multi(ST_GeomFromText($1, 4326))::geography
+            WHERE id = $2
+            "#,
+            wkt,
+            id,
+        )
+        .execute(pool)
+        .await?;
+        println!("  ~ {name}");
+    }
+    Ok(())
+}
+
 /// Upsert the default admin. Idempotent: rerunning seed leaves any other
 /// users alone, just resets this account's password back to the default.
 async fn seed_admin(pool: &PgPool) -> anyhow::Result<()> {
@@ -362,6 +418,9 @@ async fn seed_admin(pool: &PgPool) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Look up a previously-seeded row's id by name. Returns `None` if the name
+/// isn't in `rows`, which callers can either tolerate (`and_then`) or
+/// panic on (`unwrap_or_else`).
 fn find_id(rows: &[Seeded], name: &str) -> Option<Uuid> {
     rows.iter().find(|r| r.name == name).map(|r| r.id)
 }

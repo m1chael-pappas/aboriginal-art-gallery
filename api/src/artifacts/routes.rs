@@ -1,3 +1,6 @@
+//! HTTP handlers for the Artifacts BC. Reads are public; writes require an
+//! Admin-role JWT.
+
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -16,6 +19,7 @@ use crate::{
     state::AppState,
 };
 
+/// Build the `/artifacts` sub-router.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/artifacts", get(list_artifacts).post(create_artifact))
@@ -27,6 +31,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
+/// `GET /artifacts` — every artifact in the collection, ordered by title.
 #[utoipa::path(
     get,
     path = "/artifacts",
@@ -40,6 +45,7 @@ pub(crate) async fn list_artifacts(State(state): State<AppState>) -> AppResult<J
     Ok(Json(artifacts))
 }
 
+/// `GET /artifacts/{id}` — one artifact by id.
 #[utoipa::path(
     get,
     path = "/artifacts/{id}",
@@ -58,6 +64,7 @@ pub(crate) async fn get_artifact(
     Ok(Json(artifact))
 }
 
+/// `POST /artifacts` — admin-only create.
 #[utoipa::path(
     post,
     path = "/artifacts",
@@ -81,6 +88,7 @@ pub(crate) async fn create_artifact(
     Ok((StatusCode::CREATED, Json(artifact)))
 }
 
+/// `PUT /artifacts/{id}` — admin-only full replacement.
 #[utoipa::path(
     put,
     path = "/artifacts/{id}",
@@ -107,6 +115,7 @@ pub(crate) async fn update_artifact(
     Ok(Json(artifact))
 }
 
+/// `DELETE /artifacts/{id}` — admin-only.
 #[utoipa::path(
     delete,
     path = "/artifacts/{id}",

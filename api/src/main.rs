@@ -1,3 +1,9 @@
+//! Binary entry point.
+//!
+//! Loads `.env`, initialises tracing, connects to Postgres, runs pending
+//! migrations, derives the JWT signing keys, and serves the assembled
+//! [`gallery_api::build_router`] on `127.0.0.1:8080`.
+
 use std::net::SocketAddr;
 
 use gallery_api::{auth::JwtSecret, build_router, state::AppState};
@@ -26,8 +32,6 @@ async fn main() -> anyhow::Result<()> {
 
     let jwt_secret = JwtSecret::from_env()?;
 
-    // Permissive CORS for local dev — Vite at :5173 needs it. Tighten
-    // (specific origins, methods, headers) before any non-localhost deploy.
     let cors = CorsLayer::permissive();
 
     let app = build_router(AppState { pool, jwt_secret }).layer(cors);

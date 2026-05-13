@@ -1,3 +1,6 @@
+//! HTTP handlers for the Artists BC. Reads are public; writes require an
+//! Admin-role JWT.
+
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -16,6 +19,8 @@ use crate::{
     state::AppState,
 };
 
+/// Build the `/artists` sub-router. Merged into the top-level router by
+/// [`crate::build_router`].
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/artists", get(list_artists).post(create_artist))
@@ -25,6 +30,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
+/// `GET /artists` — every artist in the archive, ordered by display name.
 #[utoipa::path(
     get,
     path = "/artists",
@@ -38,6 +44,7 @@ pub(crate) async fn list_artists(State(state): State<AppState>) -> AppResult<Jso
     Ok(Json(artists))
 }
 
+/// `GET /artists/{id}` — one artist by id, 404 if not found.
 #[utoipa::path(
     get,
     path = "/artists/{id}",
@@ -56,6 +63,7 @@ pub(crate) async fn get_artist(
     Ok(Json(artist))
 }
 
+/// `POST /artists` — admin-only create.
 #[utoipa::path(
     post,
     path = "/artists",
@@ -79,6 +87,7 @@ pub(crate) async fn create_artist(
     Ok((StatusCode::CREATED, Json(artist)))
 }
 
+/// `PUT /artists/{id}` — admin-only full replacement (PUT semantics, not patch).
 #[utoipa::path(
     put,
     path = "/artists/{id}",
@@ -105,6 +114,8 @@ pub(crate) async fn update_artist(
     Ok(Json(artist))
 }
 
+/// `DELETE /artists/{id}` — admin-only. 409 if any artifact still references
+/// this artist (`ON DELETE RESTRICT`).
 #[utoipa::path(
     delete,
     path = "/artists/{id}",

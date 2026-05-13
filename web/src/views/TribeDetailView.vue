@@ -48,6 +48,36 @@ const artifactsByMember = computed(() => {
   return counts
 })
 
+// The OpenAPI spec types `territory` as a generic `Object`, so on the FE
+// we see it as `Record<string, unknown> | null`. Read the GeoJSON members
+// through narrow guards rather than asserting a concrete shape.
+type GeoJsonGeometry = {
+  type?: unknown
+  coordinates?: unknown
+}
+
+const territory = computed<GeoJsonGeometry | null>(() => {
+  const t = tribe.value?.territory
+  return t ? (t as GeoJsonGeometry) : null
+})
+
+const territoryType = computed<string | null>(() => {
+  const t = territory.value?.type
+  return typeof t === 'string' ? t : null
+})
+
+const polygonCount = computed<number | null>(() => {
+  const coords = territory.value?.coordinates
+  if (!Array.isArray(coords)) return null
+  if (territoryType.value === 'MultiPolygon') return coords.length
+  if (territoryType.value === 'Polygon') return 1
+  return null
+})
+
+const territoryPretty = computed<string>(() => {
+  return territory.value ? JSON.stringify(territory.value, null, 2) : ''
+})
+
 async function onDelete() {
   if (!tribe.value) return
   const memberCount = membersOfTribe.value.length
@@ -123,7 +153,31 @@ async function onDelete() {
         <dd class="text-ink leading-relaxed whitespace-pre-line">
           {{ tribe.description ?? '—' }}
         </dd>
+
+        <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
+          territory
+        </dt>
+        <dd class="text-ink">
+          <template v-if="territory">
+            <span class="font-mono text-xs text-ochre">{{ territoryType ?? 'set' }}</span>
+            <span v-if="polygonCount !== null" class="font-mono text-xs text-muted">
+              · {{ polygonCount }} {{ polygonCount === 1 ? 'polygon' : 'polygons' }}
+            </span>
+          </template>
+          <span v-else class="text-muted">—</span>
+        </dd>
       </dl>
+
+      <details v-if="territory" class="mb-12 border border-dashed border-line">
+        <summary
+          class="font-mono text-[10px] tracking-widest uppercase text-muted px-4 py-3 cursor-pointer hover:text-ink transition-colors"
+        >
+          view GeoJSON
+        </summary>
+        <pre
+          class="px-4 py-3 border-t border-dashed border-line font-mono text-[11px] text-ink overflow-x-auto leading-relaxed"
+        >{{ territoryPretty }}</pre>
+      </details>
 
       <div>
         <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">

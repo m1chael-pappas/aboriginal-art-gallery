@@ -1,21 +1,37 @@
+//! Domain models for the Artists BC and the JSON shapes the HTTP layer uses.
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+/// An Aboriginal artist as stored in the gallery's archive. `tribe_id` is
+/// nullable because the artist's affiliation may be unknown or unrecorded.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Artist {
+    /// Stable UUIDv4 primary key.
     pub id: Uuid,
+    /// Name we display in the UI — typically the artist's published name,
+    /// not necessarily a legal name.
     pub display_name: String,
+    /// Year of birth, or `null` if unknown.
     pub birth_year: Option<i16>,
+    /// Year of death, or `null` if living/unknown. A DB CHECK constraint
+    /// enforces `death_year >= birth_year` when both are set.
     pub death_year: Option<i16>,
+    /// Free-text region descriptor (e.g. "Hermannsburg, Northern Territory").
     pub region: Option<String>,
+    /// Biographical paragraph(s).
     pub biography: Option<String>,
+    /// FK to [`crate::tribes::model::Tribe`]; `ON DELETE SET NULL`.
     pub tribe_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
+/// Request body for `POST /artists` and the full-replacement `PUT /artists/{id}`.
+/// Every field is optional except `display_name`; omitted optional fields
+/// become `NULL` in the DB on PUT (replace, not patch).
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ArtistInput {
     pub display_name: String,
@@ -27,6 +43,9 @@ pub struct ArtistInput {
 }
 
 impl ArtistInput {
+    /// Application-side validation. Mirrors the DB CHECK constraints so the
+    /// client gets a 400 with a useful message instead of a generic 500 from
+    /// SQLSTATE 23514.
     pub fn validate(&self) -> Result<(), String> {
         if self.display_name.trim().is_empty() {
             return Err("display_name cannot be empty".into());

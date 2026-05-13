@@ -1,3 +1,9 @@
+//! HTTP handlers for the auth + users surface.
+//!
+//! `/auth/register` and `/auth/login` are public. Everything else requires a
+//! valid bearer token, and the `/users` endpoints additionally require the
+//! Admin role (the GET-by-id and PUT-by-id endpoints relax this for "self").
+
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -16,6 +22,7 @@ use crate::{
     state::AppState,
 };
 
+/// Build the `/auth` + `/users` sub-router.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth/register", post(register))
@@ -28,6 +35,9 @@ pub fn router() -> Router<AppState> {
         )
 }
 
+/// `POST /auth/register` — public. Creates a `role=User` account and
+/// returns an Auth response (token + user) so the FE doesn't need a
+/// follow-up login call.
 #[utoipa::path(
     post,
     path = "/auth/register",
@@ -54,6 +64,14 @@ pub(crate) async fn register(
     Ok((StatusCode::CREATED, Json(AuthResponse { token, user })))
 }
 
+/// `POST /auth/login` — public.
+///
+/// Looks up the user by email *first*. Argon2 verify is the expensive step,
+/// so it would be tempting to skip it when the user doesn't exist — but
+/// that creates a timing oracle for enumerating valid emails. We accept
+/// the small leak (no hash to verify on miss) in exchange for a simpler
+/// handler; a fully timing-safe variant would verify against a dummy hash
+/// on miss.
 #[utoipa::path(
     post,
     path = "/auth/login",
@@ -71,12 +89,6 @@ pub(crate) async fn login(
 ) -> AppResult<Json<AuthResponse>> {
     input.validate().map_err(AppError::Validation)?;
 
-    // Look up by email *first*. Argon2 verify is the expensive step, so it
-    // would be tempting to skip it when the user doesn't exist — but that
-    // creates a timing oracle for enumerating valid emails. We still want
-    // to bail early (no hash to verify), so we accept the small leak in
-    // exchange for a simpler handler. A fully timing-safe variant would
-    // verify against a dummy hash on miss.
     let user = match repo::find_by_email(&state.pool, input.email.trim()).await? {
         Some(u) => u,
         None => return Err(AppError::Unauthorized("invalid credentials".into())),
@@ -90,6 +102,7 @@ pub(crate) async fn login(
     Ok(Json(AuthResponse { token, user }))
 }
 
+/// `GET /auth/me` — the user identified by the bearer token.
 #[utoipa::path(
     get,
     path = "/auth/me",
@@ -105,6 +118,7 @@ pub(crate) async fn me(State(state): State<AppState>, auth: AuthUser) -> AppResu
     Ok(Json(user))
 }
 
+/// `GET /users` — admin-only listing of every account.
 #[utoipa::path(
     get,
     path = "/users",
@@ -124,6 +138,8 @@ pub(crate) async fn list_users(
     Ok(Json(users))
 }
 
+/// `GET /users/{id}` — admin can read anyone; regular users can read only
+/// themselves.
 #[utoipa::path(
     get,
     path = "/users/{id}",
@@ -147,6 +163,8 @@ pub(crate) async fn get_user(
     Ok(Json(user))
 }
 
+/// `PUT /users/{id}` — admin can patch anyone; regular users can patch only
+/// themselves, and never `role` (escalation guard).
 #[utoipa::path(
     put,
     path = "/users/{id}",
@@ -172,8 +190,6 @@ pub(crate) async fn update_user(
     require_self_or_admin(&auth.claims, id)?;
     input.validate().map_err(AppError::Validation)?;
 
-    // Role escalation is admin-only — a regular user editing themselves can
-    // change email/password but not promote to Admin.
     if input.role.is_some() && auth.claims.role != Role::Admin {
         return Err(AppError::Forbidden("only admins can change role".into()));
     }
@@ -181,7 +197,6 @@ pub(crate) async fn update_user(
     let new_email = input.email.as_deref().map(str::trim);
     let new_role_str = input.role.as_ref().map(|r| r.as_str());
 
-    // Hash the new password here so the repo stays oblivious to argon2.
     let new_hash = match input.password.as_deref() {
         Some(p) => Some(password::hash_password(p)?),
         None => None,
@@ -199,6 +214,10 @@ pub(crate) async fn update_user(
     Ok(Json(updated))
 }
 
+/// `DELETE /users/{id}` — admin-only, with a guard against deleting *yourself*.
+///
+/// Refusing the self-delete keeps the gallery from ending up in a state
+/// where nobody can administer it. Cheap check, big payoff.
 #[utoipa::path(
     delete,
     path = "/users/{id}",
@@ -218,8 +237,6 @@ pub(crate) async fn delete_user(
     admin: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    // Refuse to let the last admin nuke themselves out of the system — we'd
-    // be left with a gallery no one can administer. Cheap guard, big payoff.
     if admin.claims.sub == id {
         return Err(AppError::Conflict(
             "admins cannot delete their own account".into(),
@@ -229,6 +246,8 @@ pub(crate) async fn delete_user(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Authorisation helper: allow Admin tokens through unconditionally, and
+/// allow any token whose `sub` matches the targeted user id.
 fn require_self_or_admin(claims: &Claims, target: Uuid) -> AppResult<()> {
     if claims.role == Role::Admin || claims.sub == target {
         Ok(())
@@ -239,6 +258,7 @@ fn require_self_or_admin(claims: &Claims, target: Uuid) -> AppResult<()> {
     }
 }
 
+/// Build a fresh JWT for `user`, encoded with the app's signing key.
 fn issue_token(state: &AppState, user: &User) -> AppResult<String> {
     let role = Role::from_db_str(&user.role)?;
     let claims = Claims::new(user.id, user.email.clone(), role);

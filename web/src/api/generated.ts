@@ -11,8 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /artifacts` — every artifact in the collection, ordered by title. */
         get: operations["list_artifacts"];
         put?: never;
+        /** `POST /artifacts` — admin-only create. */
         post: operations["create_artifact"];
         delete?: never;
         options?: never;
@@ -27,9 +29,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /artifacts/{id}` — one artifact by id. */
         get: operations["get_artifact"];
+        /** `PUT /artifacts/{id}` — admin-only full replacement. */
         put: operations["update_artifact"];
         post?: never;
+        /** `DELETE /artifacts/{id}` — admin-only. */
         delete: operations["delete_artifact"];
         options?: never;
         head?: never;
@@ -43,8 +48,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /artists` — every artist in the archive, ordered by display name. */
         get: operations["list_artists"];
         put?: never;
+        /** `POST /artists` — admin-only create. */
         post: operations["create_artist"];
         delete?: never;
         options?: never;
@@ -59,9 +66,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /artists/{id}` — one artist by id, 404 if not found. */
         get: operations["get_artist"];
+        /** `PUT /artists/{id}` — admin-only full replacement (PUT semantics, not patch). */
         put: operations["update_artist"];
         post?: never;
+        /**
+         * `DELETE /artists/{id}` — admin-only. 409 if any artifact still references
+         *     this artist (`ON DELETE RESTRICT`).
+         */
         delete: operations["delete_artist"];
         options?: never;
         head?: never;
@@ -77,6 +90,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * `POST /auth/login` — public.
+         * @description Looks up the user by email *first*. Argon2 verify is the expensive step,
+         *     so it would be tempting to skip it when the user doesn't exist — but
+         *     that creates a timing oracle for enumerating valid emails. We accept
+         *     the small leak (no hash to verify on miss) in exchange for a simpler
+         *     handler; a fully timing-safe variant would verify against a dummy hash
+         *     on miss.
+         */
         post: operations["login"];
         delete?: never;
         options?: never;
@@ -91,6 +113,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /auth/me` — the user identified by the bearer token. */
         get: operations["me"];
         put?: never;
         post?: never;
@@ -109,6 +132,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * `POST /auth/register` — public. Creates a `role=User` account and
+         *     returns an Auth response (token + user) so the FE doesn't need a
+         *     follow-up login call.
+         */
         post: operations["register"];
         delete?: never;
         options?: never;
@@ -123,9 +151,32 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /tribes` — every tribe in the archive, ordered by name. */
         get: operations["list_tribes"];
         put?: never;
+        /** `POST /tribes` — admin-only create. */
         post: operations["create_tribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tribes/near": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `GET /tribes/near?lat=&lng=&km=` — public spatial query. Returns tribes
+         *     whose territory lies within `km` of the point, nearest first. Powered by
+         *     PostGIS `ST_DWithin` over the GiST index on `tribes.territory`.
+         */
+        get: operations["search_near"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -139,10 +190,43 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /tribes/{id}` — one tribe with its territory (if set) as GeoJSON. */
         get: operations["get_tribe"];
+        /**
+         * `PUT /tribes/{id}` — admin-only full replacement. Territory is preserved
+         *     — use the dedicated endpoints to change it.
+         */
         put: operations["update_tribe"];
         post?: never;
+        /**
+         * `DELETE /tribes/{id}` — admin-only. Affiliated artists have their
+         *     `tribe_id` set to NULL (`ON DELETE SET NULL`).
+         */
         delete: operations["delete_tribe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tribes/{id}/territory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * `PUT /tribes/{id}/territory` — admin-only. Body is a GeoJSON Polygon or
+         *     MultiPolygon in EPSG:4326; Polygon is auto-lifted to MultiPolygon.
+         */
+        put: operations["set_territory"];
+        post?: never;
+        /**
+         * `DELETE /tribes/{id}/territory` — admin-only. Sets the territory column
+         *     back to NULL; the tribe itself stays.
+         */
+        delete: operations["clear_territory"];
         options?: never;
         head?: never;
         patch?: never;
@@ -155,6 +239,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** `GET /users` — admin-only listing of every account. */
         get: operations["list_users"];
         put?: never;
         post?: never;
@@ -171,9 +256,22 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * `GET /users/{id}` — admin can read anyone; regular users can read only
+         *     themselves.
+         */
         get: operations["get_user"];
+        /**
+         * `PUT /users/{id}` — admin can patch anyone; regular users can patch only
+         *     themselves, and never `role` (escalation guard).
+         */
         put: operations["update_user"];
         post?: never;
+        /**
+         * `DELETE /users/{id}` — admin-only, with a guard against deleting *yourself*.
+         * @description Refusing the self-delete keeps the gallery from ending up in a state
+         *     where nobody can administer it. Cheap check, big payoff.
+         */
         delete: operations["delete_user"];
         options?: never;
         head?: never;
@@ -184,20 +282,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description A single work in the collection — painting, bark, sculpture, ceremonial
+         *     piece. `artist_id` is required (every artifact has a maker); dimensions
+         *     and metadata are optional because not every record is fully catalogued.
+         */
         Artifact: {
+            /** @description Narrower stylistic label — e.g. "Western Desert", "Yirrkala bark". */
             art_style?: string | null;
+            /** @description Broad classification — e.g. "painting", "sculpture", "bark". */
             art_type?: string | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description FK to [`crate::artists::model::Artist`]; `ON DELETE RESTRICT`.
+             */
             artist_id: string;
             /** Format: date-time */
             created_at: string;
             /** Format: int32 */
             depth_cm?: number | null;
             description?: string | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Physical dimensions in centimetres. A DB CHECK enforces positivity.
+             */
             height_cm?: number | null;
             /** Format: uuid */
             id: string;
+            /** @description Materials and technique — e.g. "Synthetic polymer paint on canvas". */
             medium?: string | null;
             title: string;
             /** Format: date-time */
@@ -207,6 +319,7 @@ export interface components {
             /** Format: int32 */
             year_created?: number | null;
         };
+        /** @description Request body for `POST /artifacts` and `PUT /artifacts/{id}`. */
         ArtifactInput: {
             art_style?: string | null;
             art_type?: string | null;
@@ -224,23 +337,51 @@ export interface components {
             /** Format: int32 */
             year_created?: number | null;
         };
+        /**
+         * @description An Aboriginal artist as stored in the gallery's archive. `tribe_id` is
+         *     nullable because the artist's affiliation may be unknown or unrecorded.
+         */
         Artist: {
+            /** @description Biographical paragraph(s). */
             biography?: string | null;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Year of birth, or `null` if unknown.
+             */
             birth_year?: number | null;
             /** Format: date-time */
             created_at: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Year of death, or `null` if living/unknown. A DB CHECK constraint
+             *     enforces `death_year >= birth_year` when both are set.
+             */
             death_year?: number | null;
+            /**
+             * @description Name we display in the UI — typically the artist's published name,
+             *     not necessarily a legal name.
+             */
             display_name: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Stable UUIDv4 primary key.
+             */
             id: string;
+            /** @description Free-text region descriptor (e.g. "Hermannsburg, Northern Territory"). */
             region?: string | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description FK to [`crate::tribes::model::Tribe`]; `ON DELETE SET NULL`.
+             */
             tribe_id?: string | null;
             /** Format: date-time */
             updated_at: string;
         };
+        /**
+         * @description Request body for `POST /artists` and the full-replacement `PUT /artists/{id}`.
+         *     Every field is optional except `display_name`; omitted optional fields
+         *     become `NULL` in the DB on PUT (replace, not patch).
+         */
         ArtistInput: {
             biography?: string | null;
             /** Format: int32 */
@@ -253,19 +394,24 @@ export interface components {
             tribe_id?: string | null;
         };
         /**
-         * @description What we send back from `/auth/register` and `/auth/login` — the issued
-         *     JWT plus the (sanitised) user so the FE can stash both without a second
+         * @description Response from `/auth/register` and `/auth/login` — the issued JWT plus
+         *     the (sanitised) user so the FE can stash both without a second
          *     `/auth/me` round-trip.
          */
         AuthResponse: {
             token: string;
             user: components["schemas"]["User"];
         };
+        /** @description Request body for `POST /auth/login`. */
         LoginInput: {
             /** @example alice@example.com */
             email: string;
             password: string;
         };
+        /**
+         * @description Request body for `POST /auth/register`. New accounts always start with
+         *     `role = "User"`; promotion to `"Admin"` is a separate admin-only PUT.
+         */
         RegisterInput: {
             /** @example alice@example.com */
             email: string;
@@ -273,24 +419,47 @@ export interface components {
             password: string;
         };
         /**
-         * @description Roles the app understands. Stored in the DB as plain strings (with a CHECK
-         *     constraint), and embedded in the JWT claim of the same name. Keeping it as
-         *     an enum on the Rust side gives us exhaustiveness when matching.
+         * @description Roles the app understands. Stored in the DB as plain strings (with a
+         *     CHECK constraint) and embedded in the JWT claim of the same name.
+         *     Keeping it as an enum on the Rust side gives us exhaustiveness when
+         *     matching.
          * @enum {string}
          */
         Role: "User" | "Admin";
+        /**
+         * @description An Aboriginal tribe / language group. `territory` is a PostGIS
+         *     `geography(MultiPolygon, 4326)` column on the DB side, serialised to
+         *     GeoJSON on the way out.
+         */
         Tribe: {
             /** Format: date-time */
             created_at: string;
             description?: string | null;
             /** Format: uuid */
             id: string;
+            /** @description Language family / group (e.g. "Yolngu Matha"). */
             language_group?: string | null;
+            /**
+             * @description Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint —
+             *     duplicate creates surface as 409 Conflict.
+             */
             name: string;
+            /** @description Broad geographic descriptor (e.g. "Western Desert"). */
             region?: string | null;
+            /**
+             * @description GeoJSON geometry (MultiPolygon, EPSG:4326) of the tribe's traditional
+             *     Country, or `null` if not set. Demo approximation, not authoritative.
+             *     Managed via the dedicated `/tribes/{id}/territory` endpoints rather
+             *     than the main PUT.
+             */
+            territory: Record<string, never>;
             /** Format: date-time */
             updated_at: string;
         };
+        /**
+         * @description Request body for `POST /tribes` and `PUT /tribes/{id}`. Territory is
+         *     intentionally excluded — it has its own endpoint pair.
+         */
         TribeInput: {
             description?: string | null;
             language_group?: string | null;
@@ -298,24 +467,37 @@ export interface components {
             region?: string | null;
         };
         /**
-         * @description User as stored. `password_hash` is held in the struct so the repo doesn't
-         *     need a second fetch on login, but `#[serde(skip_serializing)]` keeps it
-         *     out of every API response — clients only ever see the safe fields.
+         * @description User as stored.
+         *
+         *     `password_hash` is held in the struct so the repo doesn't need a second
+         *     fetch on login, but `#[serde(skip_serializing)]` keeps it out of every
+         *     API response — clients only ever see the safe fields. The matching
+         *     `#[schema(write_only)]` flag advertises the same constraint in the
+         *     OpenAPI doc.
          */
         User: {
             /** Format: date-time */
             created_at: string;
+            /**
+             * @description Login email. Stored as PostgreSQL `CITEXT` so case differences don't
+             *     create duplicates, and subject to a DB CHECK that the value contains
+             *     `@` and `.`.
+             */
             email: string;
             /** Format: uuid */
             id: string;
+            /** @description Either `"User"` or `"Admin"`, enforced by a DB CHECK constraint. */
             role: string;
             /** Format: date-time */
             updated_at: string;
         };
         /**
-         * @description Patch shape for `PUT /users/:id`. Every field is optional; the repo applies
-         *     `COALESCE`, leaving omitted fields untouched. `role` is admin-only — the
-         *     handler enforces that before calling the repo.
+         * @description Patch shape for `PUT /users/{id}`.
+         *
+         *     Every field is optional; the repo applies `COALESCE`, leaving omitted
+         *     fields untouched. `role` is admin-only — the handler enforces that before
+         *     calling the repo, so a regular user can change their own email/password
+         *     without being able to escalate.
          */
         UserUpdate: {
             email?: string | null;
@@ -890,6 +1072,49 @@ export interface operations {
             };
         };
     };
+    search_near: {
+        parameters: {
+            query: {
+                /**
+                 * @description Latitude in WGS-84 degrees, range `[-90, 90]`.
+                 * @example -22.5
+                 */
+                lat: number;
+                /**
+                 * @description Longitude in WGS-84 degrees, range `[-180, 180]`.
+                 * @example 130
+                 */
+                lng: number;
+                /**
+                 * @description Search radius in kilometres. Defaults to 100 if omitted.
+                 * @example 250
+                 */
+                km?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tribes whose territory lies within `km` of (lat, lng), nearest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tribe"][];
+                };
+            };
+            /** @description Invalid coordinates or radius */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_tribe: {
         parameters: {
             query?: never;
@@ -993,6 +1218,133 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Tribe deleted (artists.tribe_id set to NULL) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin role required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No tribe with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_territory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tribe UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description GeoJSON Polygon or MultiPolygon geometry (EPSG:4326) */
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "coordinates": [
+                 *         [
+                 *           [
+                 *             129,
+                 *             -25
+                 *           ],
+                 *           [
+                 *             134,
+                 *             -25
+                 *           ],
+                 *           [
+                 *             134,
+                 *             -20
+                 *           ],
+                 *           [
+                 *             129,
+                 *             -20
+                 *           ],
+                 *           [
+                 *             129,
+                 *             -25
+                 *           ]
+                 *         ]
+                 *       ],
+                 *       "type": "Polygon"
+                 *     }
+                 */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Tribe with new territory included as GeoJSON */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tribe"];
+                };
+            };
+            /** @description Invalid or non-polygon GeoJSON */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Admin role required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No tribe with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    clear_territory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tribe UUID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Territory cleared */
             204: {
                 headers: {
                     [name: string]: unknown;

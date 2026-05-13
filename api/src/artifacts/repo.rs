@@ -1,9 +1,12 @@
+//! Data access for the Artifacts table.
+
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::model::{Artifact, ArtifactInput};
 use crate::error::{AppError, AppResult};
 
+/// All artifacts ordered alphabetically by title.
 pub async fn list(pool: &PgPool) -> AppResult<Vec<Artifact>> {
     let artifacts = sqlx::query_as!(
         Artifact,
@@ -20,6 +23,7 @@ pub async fn list(pool: &PgPool) -> AppResult<Vec<Artifact>> {
     Ok(artifacts)
 }
 
+/// Fetch a single artifact by id, or `AppError::NotFound`.
 pub async fn find(pool: &PgPool, id: Uuid) -> AppResult<Artifact> {
     sqlx::query_as!(
         Artifact,
@@ -37,6 +41,8 @@ pub async fn find(pool: &PgPool, id: Uuid) -> AppResult<Artifact> {
     .ok_or(AppError::NotFound)
 }
 
+/// Insert a new artifact. A bad `artist_id` is translated into 400 via
+/// [`map_artist_fk_violation`].
 pub async fn create(pool: &PgPool, input: ArtifactInput) -> AppResult<Artifact> {
     sqlx::query_as!(
         Artifact,
@@ -65,6 +71,7 @@ pub async fn create(pool: &PgPool, input: ArtifactInput) -> AppResult<Artifact> 
     .map_err(map_artist_fk_violation)
 }
 
+/// Replace every field on an existing artifact.
 pub async fn update(pool: &PgPool, id: Uuid, input: ArtifactInput) -> AppResult<Artifact> {
     sqlx::query_as!(
         Artifact,
@@ -103,6 +110,7 @@ pub async fn update(pool: &PgPool, id: Uuid, input: ArtifactInput) -> AppResult<
     .ok_or(AppError::NotFound)
 }
 
+/// Delete an artifact. 404 if the id wasn't there.
 pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
     let result = sqlx::query!("DELETE FROM artifacts WHERE id = $1", id)
         .execute(pool)
@@ -114,8 +122,8 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
     Ok(())
 }
 
-// Translate Postgres FK violation (SQLSTATE 23503) on artist_id into a 400
-// with a clear message, instead of letting it surface as a generic 500.
+/// Translate an FK violation on `artist_id` into a 400 with a clear message,
+/// instead of letting SQLSTATE 23503 surface as a generic 500.
 fn map_artist_fk_violation(err: sqlx::Error) -> AppError {
     if let sqlx::Error::Database(db_err) = &err {
         if db_err.code().as_deref() == Some("23503") {
