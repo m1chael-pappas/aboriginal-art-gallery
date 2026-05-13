@@ -19,7 +19,7 @@ async fn create_artist(client: &TestClient, name: &str) -> Uuid {
 
 #[sqlx::test]
 async fn create_artifact_happy_path(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Emily Kame Kngwarreye").await;
 
     let (status, body) = client
@@ -49,7 +49,7 @@ async fn create_artifact_happy_path(pool: PgPool) {
 
 #[sqlx::test]
 async fn create_artifact_rejects_empty_title(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (status, body) = client
@@ -65,7 +65,7 @@ async fn create_artifact_rejects_empty_title(pool: PgPool) {
 
 #[sqlx::test]
 async fn create_artifact_rejects_unknown_artist(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let bogus = Uuid::new_v4();
 
     let (status, body) = client
@@ -84,7 +84,7 @@ async fn create_artifact_rejects_unknown_artist(pool: PgPool) {
 
 #[sqlx::test]
 async fn create_artifact_rejects_non_positive_dimension(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (status, body) = client
@@ -104,7 +104,7 @@ async fn create_artifact_rejects_non_positive_dimension(pool: PgPool) {
 
 #[sqlx::test]
 async fn list_artifacts_returns_array(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
 
     let (status, body) = client.get("/artifacts").await;
     assert_eq!(status, StatusCode::OK);
@@ -131,7 +131,7 @@ async fn list_artifacts_returns_array(pool: PgPool) {
 
 #[sqlx::test]
 async fn get_artifact_by_id_returns_record(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (_, created) = client
@@ -149,7 +149,7 @@ async fn get_artifact_by_id_returns_record(pool: PgPool) {
 
 #[sqlx::test]
 async fn get_artifact_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let unknown = Uuid::new_v4();
     let (status, _) = client.get(&format!("/artifacts/{unknown}")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -157,7 +157,7 @@ async fn get_artifact_unknown_id_returns_404(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_artifact_replaces_fields(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (_, created) = client
@@ -186,7 +186,7 @@ async fn update_artifact_replaces_fields(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_artifact_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
     let unknown = Uuid::new_v4();
 
@@ -201,7 +201,7 @@ async fn update_artifact_unknown_id_returns_404(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_artifact_rejects_unknown_artist(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (_, created) = client
@@ -225,7 +225,7 @@ async fn update_artifact_rejects_unknown_artist(pool: PgPool) {
 
 #[sqlx::test]
 async fn delete_artifact_removes_record(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let artist_id = create_artist(&client, "Test").await;
 
     let (_, created) = client
@@ -245,7 +245,7 @@ async fn delete_artifact_removes_record(pool: PgPool) {
 
 #[sqlx::test]
 async fn delete_artifact_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool);
+    let client = TestClient::new(pool).as_admin().await;
     let unknown = Uuid::new_v4();
     let (status, _) = client.delete(&format!("/artifacts/{unknown}")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);

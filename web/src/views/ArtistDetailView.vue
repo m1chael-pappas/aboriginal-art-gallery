@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useArtistsStore } from '@/stores/artists'
 import { useTribesStore } from '@/stores/tribes'
 import { useArtifactsStore } from '@/stores/artifacts'
+import { useAuthStore } from '@/stores/auth'
 import type { Artist } from '@/api/types'
 
 const props = defineProps<{ id: string }>()
@@ -12,6 +13,7 @@ const router = useRouter()
 const artists = useArtistsStore()
 const tribes = useTribesStore()
 const artifacts = useArtifactsStore()
+const auth = useAuthStore()
 
 const artist = ref<Artist | null>(null)
 const loadError = ref<string | null>(null)
@@ -80,20 +82,22 @@ async function onDelete() {
       <div class="flex items-baseline justify-between mb-8 gap-6 flex-wrap">
         <h1 class="text-3xl font-medium text-ink">{{ artist.display_name }}</h1>
         <div class="flex items-center gap-5 font-mono text-xs uppercase tracking-widest">
-          <RouterLink
-            :to="{ name: 'artists.edit', params: { id: artist.id } }"
-            class="text-ink hover:text-ochre transition-colors"
-          >
-            edit
-          </RouterLink>
-          <button
-            type="button"
-            :disabled="deleting"
-            @click="onDelete"
-            class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
-          >
-            {{ deleting ? 'deleting…' : 'delete' }}
-          </button>
+          <template v-if="auth.isAdmin">
+            <RouterLink
+              :to="{ name: 'artists.edit', params: { id: artist.id } }"
+              class="text-ink hover:text-ochre transition-colors"
+            >
+              edit
+            </RouterLink>
+            <button
+              type="button"
+              :disabled="deleting"
+              @click="onDelete"
+              class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
+            >
+              {{ deleting ? 'deleting…' : 'delete' }}
+            </button>
+          </template>
           <RouterLink
             :to="{ name: 'artists' }"
             class="text-muted hover:text-ink transition-colors"

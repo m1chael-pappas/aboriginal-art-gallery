@@ -4,10 +4,12 @@ import { RouterLink } from 'vue-router'
 import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useTribesStore } from '@/stores/tribes'
+import { useAuthStore } from '@/stores/auth'
 
 const artists = useArtistsStore()
 const artifacts = useArtifactsStore()
 const tribes = useTribesStore()
+const auth = useAuthStore()
 
 onMounted(() => {
   artists.fetchAll()
@@ -46,6 +48,7 @@ function pad(n: number): string {
         index · {{ artists.items.length }} {{ artists.items.length === 1 ? 'entry' : 'entries' }}
       </div>
       <RouterLink
+        v-if="auth.isAdmin"
         :to="{ name: 'artists.new' }"
         class="font-mono text-xs uppercase tracking-widest text-ink hover:text-ochre transition-colors"
       >

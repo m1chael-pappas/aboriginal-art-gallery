@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useTribesStore } from '@/stores/tribes'
 import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
+import { useAuthStore } from '@/stores/auth'
 import type { Tribe } from '@/api/types'
 
 const props = defineProps<{ id: string }>()
@@ -12,6 +13,7 @@ const router = useRouter()
 const tribes = useTribesStore()
 const artists = useArtistsStore()
 const artifacts = useArtifactsStore()
+const auth = useAuthStore()
 
 const tribe = ref<Tribe | null>(null)
 const loadError = ref<string | null>(null)
@@ -81,20 +83,22 @@ async function onDelete() {
       <div class="flex items-baseline justify-between mb-8 gap-6 flex-wrap">
         <h1 class="text-3xl font-medium text-ink">{{ tribe.name }}</h1>
         <div class="flex items-center gap-5 font-mono text-xs uppercase tracking-widest">
-          <RouterLink
-            :to="{ name: 'tribes.edit', params: { id: tribe.id } }"
-            class="text-ink hover:text-ochre transition-colors"
-          >
-            edit
-          </RouterLink>
-          <button
-            type="button"
-            :disabled="deleting"
-            @click="onDelete"
-            class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
-          >
-            {{ deleting ? 'deleting…' : 'delete' }}
-          </button>
+          <template v-if="auth.isAdmin">
+            <RouterLink
+              :to="{ name: 'tribes.edit', params: { id: tribe.id } }"
+              class="text-ink hover:text-ochre transition-colors"
+            >
+              edit
+            </RouterLink>
+            <button
+              type="button"
+              :disabled="deleting"
+              @click="onDelete"
+              class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
+            >
+              {{ deleting ? 'deleting…' : 'delete' }}
+            </button>
+          </template>
           <RouterLink
             :to="{ name: 'tribes' }"
             class="text-muted hover:text-ink transition-colors"

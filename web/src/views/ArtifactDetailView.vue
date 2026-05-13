@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useArtistsStore } from '@/stores/artists'
+import { useAuthStore } from '@/stores/auth'
 import type { Artifact } from '@/api/types'
 
 const props = defineProps<{ id: string }>()
@@ -10,6 +11,7 @@ const props = defineProps<{ id: string }>()
 const router = useRouter()
 const artifacts = useArtifactsStore()
 const artists = useArtistsStore()
+const auth = useAuthStore()
 
 const artifact = ref<Artifact | null>(null)
 const loadError = ref<string | null>(null)
@@ -73,20 +75,22 @@ async function onDelete() {
       <div class="flex items-baseline justify-between mb-8 gap-6 flex-wrap">
         <h1 class="text-3xl font-medium text-ink">{{ artifact.title }}</h1>
         <div class="flex items-center gap-5 font-mono text-xs uppercase tracking-widest">
-          <RouterLink
-            :to="{ name: 'artifacts.edit', params: { id: artifact.id } }"
-            class="text-ink hover:text-ochre transition-colors"
-          >
-            edit
-          </RouterLink>
-          <button
-            type="button"
-            :disabled="deleting"
-            @click="onDelete"
-            class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
-          >
-            {{ deleting ? 'deleting…' : 'delete' }}
-          </button>
+          <template v-if="auth.isAdmin">
+            <RouterLink
+              :to="{ name: 'artifacts.edit', params: { id: artifact.id } }"
+              class="text-ink hover:text-ochre transition-colors"
+            >
+              edit
+            </RouterLink>
+            <button
+              type="button"
+              :disabled="deleting"
+              @click="onDelete"
+              class="text-muted hover:text-ochre disabled:opacity-50 transition-colors"
+            >
+              {{ deleting ? 'deleting…' : 'delete' }}
+            </button>
+          </template>
           <RouterLink
             :to="{ name: 'artifacts' }"
             class="text-muted hover:text-ink transition-colors"

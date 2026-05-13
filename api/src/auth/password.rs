@@ -1,0 +1,40 @@
+use argon2::{
+    Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+};
+
+use crate::error::{AppError, AppResult};
+
+/// Hash a plaintext password with Argon2id and the crate's default parameters
+/// (m = 19456 KiB, t = 2, p = 1). The returned string is a self-describing
+/// PHC encoding — algorithm, params, salt, and hash all in one column — so the
+/// DB row has everything `verify_password` needs.
+pub fn hash_password(plain: &str) -> AppResult<String> {
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+
+    // password_hash errors are not Send + 'static, so anyhow::anyhow! is the
+    // ergonomic bridge into AppError::Internal.
+    let hash = argon2
+        .hash_password(plain.as_bytes(), &salt)
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("argon2 hash failed: {e}")))?;
+
+    Ok(hash.to_string())
+}
+
+/// Verify a plaintext password against a PHC-encoded hash. `Ok(true)` means
+/// match, `Ok(false)` means the hash parsed but the password is wrong. `Err`
+/// only fires when the stored hash is malformed (a data-integrity bug, not a
+/// user-facing failure mode).
+pub fn verify_password(plain: &str, phc_hash: &str) -> AppResult<bool> {
+    let parsed = PasswordHash::new(phc_hash)
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("stored password hash is invalid: {e}")))?;
+
+    match Argon2::default().verify_password(plain.as_bytes(), &parsed) {
+        Ok(()) => Ok(true),
+        Err(argon2::password_hash::Error::Password) => Ok(false),
+        Err(e) => Err(AppError::Internal(anyhow::anyhow!(
+            "argon2 verify failed: {e}"
+        ))),
+    }
+}

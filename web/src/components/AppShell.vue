@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 
 const navItems = [
   { to: '/artists', label: 'artists' },
@@ -15,12 +18,17 @@ const breadcrumb = computed(() => {
   const slug = raw.replace(/\./g, ' / ')
   return `[ aboriginal_art / ${slug} ]`
 })
+
+function onSignOut() {
+  auth.logout()
+  router.push({ name: 'home' })
+}
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col">
     <header class="border-b border-line">
-      <div class="max-w-6xl mx-auto px-10 py-4 flex items-center justify-between">
+      <div class="max-w-6xl mx-auto px-10 py-4 flex items-center justify-between gap-6">
         <RouterLink
           to="/"
           class="font-mono text-sm text-ink hover:text-ochre transition-colors"
@@ -37,6 +45,31 @@ const breadcrumb = computed(() => {
           >
             {{ item.label }}
           </RouterLink>
+
+          <span class="text-line">·</span>
+
+          <template v-if="auth.isAuthenticated && auth.user">
+            <span class="text-muted">
+              {{ auth.user.email }}
+              <span v-if="auth.isAdmin" class="text-ochre">· admin</span>
+            </span>
+            <button
+              type="button"
+              @click="onSignOut"
+              class="text-muted hover:text-ink transition-colors uppercase tracking-widest"
+            >
+              sign out
+            </button>
+          </template>
+          <template v-else>
+            <RouterLink
+              :to="{ name: 'login' }"
+              class="text-muted hover:text-ink transition-colors"
+              active-class="text-ochre"
+            >
+              sign in
+            </RouterLink>
+          </template>
         </nav>
       </div>
     </header>

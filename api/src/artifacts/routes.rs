@@ -11,6 +11,7 @@ use super::{
     repo,
 };
 use crate::{
+    auth::AdminUser,
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -41,6 +42,7 @@ async fn get_artifact(
 
 async fn create_artifact(
     State(state): State<AppState>,
+    _: AdminUser,
     Json(input): Json<ArtifactInput>,
 ) -> AppResult<(StatusCode, Json<Artifact>)> {
     input.validate().map_err(AppError::Validation)?;
@@ -50,6 +52,7 @@ async fn create_artifact(
 
 async fn update_artifact(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
     Json(input): Json<ArtifactInput>,
 ) -> AppResult<Json<Artifact>> {
@@ -60,6 +63,7 @@ async fn update_artifact(
 
 async fn delete_artifact(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
     repo::delete(&state.pool, id).await?;

@@ -1,17 +1,23 @@
 //! Dev-only data seeder.
 //!
 //! Wipes artifacts/artists/tribes (in FK order) and reinserts a curated set
-//! of well-known Aboriginal artists, their tribes, and notable works. Run:
+//! of well-known Aboriginal artists, their tribes, and notable works. Also
+//! upserts a default admin user so the FE has someone to log in as. Run:
 //!
 //!     cargo run --bin seed
 //!
 //! Idempotent — every run gives you the same end state. Destroys any
-//! existing rows in those three tables.
+//! existing rows in artifacts/artists/tribes; users are upserted (existing
+//! accounts stay, the admin's password gets reset to the default).
 
 use anyhow::Context;
+use gallery_api::auth::password;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use uuid::Uuid;
+
+const ADMIN_EMAIL: &str = "admin@gallery.local";
+const ADMIN_PASSWORD: &str = "admin-demo-pw";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -39,11 +45,18 @@ async fn main() -> anyhow::Result<()> {
     println!("Seeding artifacts...");
     seed_artifacts(&pool, &artists).await?;
 
+    println!("Seeding admin user...");
+    seed_admin(&pool).await?;
+
     println!(
-        "Done. {} tribes, {} artists, 7 artifacts.",
+        "Done. {} tribes, {} artists, 7 artifacts, 1 admin.",
         tribes.len(),
         artists.len()
     );
+    println!();
+    println!("Admin credentials for the FE demo:");
+    println!("  email:    {ADMIN_EMAIL}");
+    println!("  password: {ADMIN_PASSWORD}");
     Ok(())
 }
 
@@ -323,6 +336,29 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
         .await?;
         println!("  + {title}");
     }
+    Ok(())
+}
+
+/// Upsert the default admin. Idempotent: rerunning seed leaves any other
+/// users alone, just resets this account's password back to the default.
+async fn seed_admin(pool: &PgPool) -> anyhow::Result<()> {
+    let hash = password::hash_password(ADMIN_PASSWORD)
+        .map_err(|e| anyhow::anyhow!("hash admin password: {e}"))?;
+
+    sqlx::query!(
+        r#"
+        INSERT INTO users (email, password_hash, role)
+        VALUES ($1, $2, 'Admin')
+        ON CONFLICT (email) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash,
+                role          = 'Admin'
+        "#,
+        ADMIN_EMAIL,
+        hash,
+    )
+    .execute(pool)
+    .await?;
+    println!("  + {ADMIN_EMAIL}");
     Ok(())
 }
 

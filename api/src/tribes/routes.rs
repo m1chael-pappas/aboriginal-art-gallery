@@ -11,6 +11,7 @@ use super::{
     repo,
 };
 use crate::{
+    auth::AdminUser,
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -39,6 +40,7 @@ async fn get_tribe(
 
 async fn create_tribe(
     State(state): State<AppState>,
+    _: AdminUser,
     Json(input): Json<TribeInput>,
 ) -> AppResult<(StatusCode, Json<Tribe>)> {
     input.validate().map_err(AppError::Validation)?;
@@ -48,6 +50,7 @@ async fn create_tribe(
 
 async fn update_tribe(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
     Json(input): Json<TribeInput>,
 ) -> AppResult<Json<Tribe>> {
@@ -58,6 +61,7 @@ async fn update_tribe(
 
 async fn delete_tribe(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
     repo::delete(&state.pool, id).await?;

@@ -1,4 +1,4 @@
-// Hand-written types mirroring the Rust models in api/src/{artists,artifacts,tribes}/model.rs.
+// Hand-written types mirroring the Rust models in api/src/{artists,artifacts,tribes,users}/model.rs.
 // Will be replaced by typeshare-generated output in a later commit.
 
 export interface Artist {
@@ -66,4 +66,29 @@ export interface TribeInput {
   region?: string | null
   language_group?: string | null
   description?: string | null
+}
+
+export type Role = 'User' | 'Admin'
+
+export interface User {
+  id: string
+  email: string
+  role: Role
+  created_at: string
+  updated_at: string
+}
+
+export interface RegisterInput {
+  email: string
+  password: string
+}
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  token: string
+  user: User
 }

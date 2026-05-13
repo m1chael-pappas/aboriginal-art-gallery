@@ -11,6 +11,7 @@ use super::{
     repo,
 };
 use crate::{
+    auth::AdminUser,
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -39,6 +40,7 @@ async fn get_artist(
 
 async fn create_artist(
     State(state): State<AppState>,
+    _: AdminUser,
     Json(input): Json<ArtistInput>,
 ) -> AppResult<(StatusCode, Json<Artist>)> {
     input.validate().map_err(AppError::Validation)?;
@@ -48,6 +50,7 @@ async fn create_artist(
 
 async fn update_artist(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
     Json(input): Json<ArtistInput>,
 ) -> AppResult<Json<Artist>> {
@@ -58,6 +61,7 @@ async fn update_artist(
 
 async fn delete_artist(
     State(state): State<AppState>,
+    _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
     repo::delete(&state.pool, id).await?;
