@@ -11,7 +11,8 @@ const navItems = [
 ]
 
 const breadcrumb = computed(() => {
-  const slug = route.name === 'home' ? 'index' : String(route.name ?? 'index')
+  const raw = route.name === 'home' ? 'index' : String(route.name ?? 'index')
+  const slug = raw.replace(/\./g, ' / ')
   return `[ aboriginal_art / ${slug} ]`
 })
 </script>

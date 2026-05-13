@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useArtistsStore } from '@/stores/artists'
 import { useTribesStore } from '@/stores/tribes'
@@ -39,9 +40,17 @@ function pad(n: number): string {
 
 <template>
   <div>
-    <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">
-      collection · {{ artifacts.items.length }}
-      {{ artifacts.items.length === 1 ? 'object' : 'objects' }}
+    <div class="flex items-baseline justify-between mb-3">
+      <div class="font-mono text-[10px] tracking-widest uppercase text-muted">
+        collection · {{ artifacts.items.length }}
+        {{ artifacts.items.length === 1 ? 'object' : 'objects' }}
+      </div>
+      <RouterLink
+        :to="{ name: 'artifacts.new' }"
+        class="font-mono text-xs uppercase tracking-widest text-ink hover:text-ochre transition-colors"
+      >
+        + new
+      </RouterLink>
     </div>
     <h1 class="text-3xl font-medium text-ink mb-8">Artifacts</h1>
 
@@ -59,10 +68,11 @@ function pad(n: number): string {
     </div>
 
     <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      <article
+      <RouterLink
         v-for="(artifact, i) in artifacts.items"
         :key="artifact.id"
-        class="border border-dashed border-line p-3 flex flex-col gap-2"
+        :to="{ name: 'artifacts.detail', params: { id: artifact.id } }"
+        class="border border-dashed border-line p-3 flex flex-col gap-2 hover:bg-ochre/5 transition-colors"
       >
         <div
           class="aspect-[4/3] border border-line flex items-center justify-center"
@@ -78,7 +88,7 @@ function pad(n: number): string {
           <span v-if="tribeOf(artifact.artist_id) && artifact.year_created"> · </span>
           <span v-if="artifact.year_created">{{ artifact.year_created }}</span>
         </div>
-      </article>
+      </RouterLink>
     </div>
   </div>
 </template>

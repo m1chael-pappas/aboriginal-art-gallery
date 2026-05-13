@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api, { extractError } from '@/api/client'
-import type { Tribe } from '@/api/types'
+import type { Tribe, TribeInput } from '@/api/types'
 
 export const useTribesStore = defineStore('tribes', () => {
   const items = ref<Tribe[]>([])
@@ -21,5 +21,39 @@ export const useTribesStore = defineStore('tribes', () => {
     }
   }
 
-  return { items, loading, error, fetchAll }
+  async function findById(id: string): Promise<Tribe> {
+    const { data } = await api.get<Tribe>(`/tribes/${id}`)
+    return data
+  }
+
+  async function create(input: TribeInput): Promise<Tribe> {
+    try {
+      const { data } = await api.post<Tribe>('/tribes', input)
+      items.value = [...items.value, data]
+      return data
+    } catch (e) {
+      throw new Error(extractError(e))
+    }
+  }
+
+  async function update(id: string, input: TribeInput): Promise<Tribe> {
+    try {
+      const { data } = await api.put<Tribe>(`/tribes/${id}`, input)
+      items.value = items.value.map((t) => (t.id === id ? data : t))
+      return data
+    } catch (e) {
+      throw new Error(extractError(e))
+    }
+  }
+
+  async function remove(id: string): Promise<void> {
+    try {
+      await api.delete(`/tribes/${id}`)
+      items.value = items.value.filter((t) => t.id !== id)
+    } catch (e) {
+      throw new Error(extractError(e))
+    }
+  }
+
+  return { items, loading, error, fetchAll, findById, create, update, remove }
 })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useTribesStore } from '@/stores/tribes'
 import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
@@ -52,9 +53,17 @@ function pad(n: number): string {
 
 <template>
   <div>
-    <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">
-      peoples · {{ tribes.items.length }}
-      {{ tribes.items.length === 1 ? 'entry' : 'entries' }}
+    <div class="flex items-baseline justify-between mb-3">
+      <div class="font-mono text-[10px] tracking-widest uppercase text-muted">
+        peoples · {{ tribes.items.length }}
+        {{ tribes.items.length === 1 ? 'entry' : 'entries' }}
+      </div>
+      <RouterLink
+        :to="{ name: 'tribes.new' }"
+        class="font-mono text-xs uppercase tracking-widest text-ink hover:text-ochre transition-colors"
+      >
+        + new
+      </RouterLink>
     </div>
     <h1 class="text-3xl font-medium text-ink mb-8">Tribes</h1>
 
@@ -82,10 +91,11 @@ function pad(n: number): string {
         <span class="text-right">artists</span>
         <span class="text-right">artifacts</span>
       </div>
-      <div
+      <RouterLink
         v-for="(tribe, i) in tribes.items"
         :key="tribe.id"
-        class="grid grid-cols-[60px_1.2fr_1fr_1.5fr_70px_80px] gap-3 py-3 border-b border-dashed border-line items-center text-sm"
+        :to="{ name: 'tribes.detail', params: { id: tribe.id } }"
+        class="grid grid-cols-[60px_1.2fr_1fr_1.5fr_70px_80px] gap-3 py-3 border-b border-dashed border-line items-center text-sm hover:bg-ochre/5 transition-colors"
       >
         <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
         <span class="text-ink">{{ tribe.name }}</span>
@@ -97,7 +107,7 @@ function pad(n: number): string {
         <span class="font-mono text-xs text-ochre text-right">
           {{ artifactsInTribe(tribe.id) }}
         </span>
-      </div>
+      </RouterLink>
     </div>
   </div>
 </template>
