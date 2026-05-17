@@ -1,4 +1,4 @@
-# Task Brief — Practical Task 5.2 (HD)
+# Task Brief - Practical Task 5.2 (HD)
 
 > Original task brief, preserved for reference. Not the working project todo (see `../TODO.md`) or plan (see `../PLAN.md`).
 
@@ -62,7 +62,7 @@ The final solution should be demonstrated to the teaching staff, and you need to
 
 ## Reference Resources
 
-- Kate Owen Gallery — Contemporary Aboriginal Art
+- Kate Owen Gallery - Contemporary Aboriginal Art
 - Aboriginal Art Code
 - Harvard Art Museums API Documentation
 - The Metropolitan Museum of Art API
