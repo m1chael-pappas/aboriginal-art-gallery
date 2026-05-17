@@ -5,6 +5,7 @@ import { useTribesStore } from '@/stores/tribes'
 import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useAuthStore } from '@/stores/auth'
+import TerritoryMap from '@/components/TerritoryMap.vue'
 import type { Tribe } from '@/api/types'
 
 const props = defineProps<{ id: string }>()
@@ -167,6 +168,16 @@ async function onDelete() {
           <span v-else class="text-muted">—</span>
         </dd>
       </dl>
+
+      <div v-if="territory" class="mb-6">
+        <div class="font-mono text-[10px] tracking-widest uppercase text-muted mb-3">
+          territory map
+        </div>
+        <TerritoryMap :geometry="territory" />
+        <p class="font-mono text-[10px] text-muted mt-2">
+          Demo approximation, not an authoritative boundary.
+        </p>
+      </div>
 
       <details v-if="territory" class="mb-12 border border-dashed border-line">
         <summary
