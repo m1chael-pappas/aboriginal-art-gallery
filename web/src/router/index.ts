@@ -94,6 +94,14 @@ const routes: RouteRecordRaw[] = [
     props: true,
     meta: { requiresAdmin: true },
   },
+
+  // Admin-only account management over the /users endpoints.
+  {
+    path: '/users',
+    name: 'users',
+    component: () => import('@/views/UsersView.vue'),
+    meta: { requiresAdmin: true },
+  },
 ]
 
 const router = createRouter({

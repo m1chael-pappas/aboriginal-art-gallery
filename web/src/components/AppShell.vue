@@ -7,11 +7,17 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const navItems = [
-  { to: '/artists', label: 'artists' },
-  { to: '/artifacts', label: 'artifacts' },
-  { to: '/tribes', label: 'tribes' },
-]
+// `users` is admin-only and the route enforces that with a guard, so it's
+// only worth showing in the nav when the current session is an admin.
+const navItems = computed(() => {
+  const items = [
+    { to: '/artists', label: 'artists' },
+    { to: '/artifacts', label: 'artifacts' },
+    { to: '/tribes', label: 'tribes' },
+  ]
+  if (auth.isAdmin) items.push({ to: '/users', label: 'users' })
+  return items
+})
 
 const breadcrumb = computed(() => {
   const raw = route.name === 'home' ? 'index' : String(route.name ?? 'index')
