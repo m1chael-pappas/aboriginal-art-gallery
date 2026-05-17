@@ -28,10 +28,5 @@ Thumbs.db
 # Local-only design references (not part of the project)
 /design_handoff_aboriginal_art_gallery/
 
-# Local-only working notes (not a project artifact)
-/TODO.md
-/PLAN.md
-/docs/brief.md
-
 # Logs
 *.log
