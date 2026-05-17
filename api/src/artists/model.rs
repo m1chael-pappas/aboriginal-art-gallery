@@ -7,11 +7,11 @@ use uuid::Uuid;
 
 /// An Aboriginal artist as stored in the gallery's archive. `tribe_id` is
 /// nullable because the artist's affiliation may be unknown or unrecorded.
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct Artist {
     /// Stable UUIDv4 primary key.
     pub id: Uuid,
-    /// Name we display in the UI — typically the artist's published name,
+    /// Name we display in the UI - typically the artist's published name,
     /// not necessarily a legal name.
     pub display_name: String,
     /// Year of birth, or `null` if unknown.
@@ -56,5 +56,64 @@ impl ArtistInput {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Pure-logic unit tests for [`ArtistInput::validate`] - no async, no
+    //! database. The fast innermost layer of the test pyramid.
+
+    use super::ArtistInput;
+
+    fn base() -> ArtistInput {
+        ArtistInput {
+            display_name: "Albert Namatjira".into(),
+            birth_year: None,
+            death_year: None,
+            region: None,
+            biography: None,
+            tribe_id: None,
+        }
+    }
+
+    #[test]
+    fn accepts_a_well_formed_input() {
+        assert!(base().validate().is_ok());
+    }
+
+    #[test]
+    fn rejects_empty_or_whitespace_display_name() {
+        let mut a = base();
+        a.display_name = String::new();
+        assert!(a.validate().is_err());
+        a.display_name = "   ".into();
+        assert!(a.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_death_year_before_birth_year() {
+        let mut a = base();
+        a.birth_year = Some(1950);
+        a.death_year = Some(1940);
+        assert!(a.validate().is_err());
+    }
+
+    #[test]
+    fn allows_equal_birth_and_death_year() {
+        let mut a = base();
+        a.birth_year = Some(1950);
+        a.death_year = Some(1950);
+        assert!(a.validate().is_ok());
+    }
+
+    #[test]
+    fn allows_a_lone_birth_or_death_year() {
+        let mut a = base();
+        a.birth_year = Some(1902);
+        assert!(a.validate().is_ok());
+        let mut b = base();
+        b.death_year = Some(1959);
+        assert!(b.validate().is_ok());
     }
 }

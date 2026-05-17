@@ -1,8 +1,8 @@
 //! HTTP handlers for the Tribes BC, including the territory and
 //! spatial-search endpoints backed by PostGIS.
 //!
-//! Reads (including `/tribes/near`) are public; writes — both the regular
-//! CRUD and the territory mutation endpoints — require an Admin-role JWT.
+//! Reads (including `/tribes/near`) are public; writes - both the regular
+//! CRUD and the territory mutation endpoints - require an Admin-role JWT.
 
 use axum::{
     Json, Router,
@@ -45,7 +45,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-/// `GET /tribes` — every tribe in the archive, ordered by name.
+/// `GET /tribes` - every tribe in the archive, ordered by name.
 #[utoipa::path(
     get,
     path = "/tribes",
@@ -59,7 +59,7 @@ pub(crate) async fn list_tribes(State(state): State<AppState>) -> AppResult<Json
     Ok(Json(tribes))
 }
 
-/// `GET /tribes/{id}` — one tribe with its territory (if set) as GeoJSON.
+/// `GET /tribes/{id}` - one tribe with its territory (if set) as GeoJSON.
 #[utoipa::path(
     get,
     path = "/tribes/{id}",
@@ -78,7 +78,7 @@ pub(crate) async fn get_tribe(
     Ok(Json(tribe))
 }
 
-/// `POST /tribes` — admin-only create.
+/// `POST /tribes` - admin-only create.
 #[utoipa::path(
     post,
     path = "/tribes",
@@ -103,8 +103,8 @@ pub(crate) async fn create_tribe(
     Ok((StatusCode::CREATED, Json(tribe)))
 }
 
-/// `PUT /tribes/{id}` — admin-only full replacement. Territory is preserved
-/// — use the dedicated endpoints to change it.
+/// `PUT /tribes/{id}` - admin-only full replacement. Territory is preserved
+/// - use the dedicated endpoints to change it.
 #[utoipa::path(
     put,
     path = "/tribes/{id}",
@@ -132,7 +132,7 @@ pub(crate) async fn update_tribe(
     Ok(Json(tribe))
 }
 
-/// `DELETE /tribes/{id}` — admin-only. Affiliated artists have their
+/// `DELETE /tribes/{id}` - admin-only. Affiliated artists have their
 /// `tribe_id` set to NULL (`ON DELETE SET NULL`).
 #[utoipa::path(
     delete,
@@ -156,7 +156,7 @@ pub(crate) async fn delete_tribe(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `PUT /tribes/{id}/territory` — admin-only. Body is a GeoJSON Polygon or
+/// `PUT /tribes/{id}/territory` - admin-only. Body is a GeoJSON Polygon or
 /// MultiPolygon in EPSG:4326; Polygon is auto-lifted to MultiPolygon.
 #[utoipa::path(
     put,
@@ -194,7 +194,7 @@ pub(crate) async fn set_territory(
     Ok(Json(tribe))
 }
 
-/// `DELETE /tribes/{id}/territory` — admin-only. Sets the territory column
+/// `DELETE /tribes/{id}/territory` - admin-only. Sets the territory column
 /// back to NULL; the tribe itself stays.
 #[utoipa::path(
     delete,
@@ -218,7 +218,7 @@ pub(crate) async fn clear_territory(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Query parameters for `GET /tribes/near` — a point + a radius in kilometres.
+/// Query parameters for `GET /tribes/near` - a point + a radius in kilometres.
 #[derive(Debug, Deserialize, IntoParams)]
 pub(crate) struct NearQuery {
     /// Latitude in WGS-84 degrees, range `[-90, 90]`.
@@ -232,7 +232,7 @@ pub(crate) struct NearQuery {
     pub km: Option<f64>,
 }
 
-/// `GET /tribes/near?lat=&lng=&km=` — public spatial query. Returns tribes
+/// `GET /tribes/near?lat=&lng=&km=` - public spatial query. Returns tribes
 /// whose territory lies within `km` of the point, nearest first. Powered by
 /// PostGIS `ST_DWithin` over the GiST index on `tribes.territory`.
 #[utoipa::path(

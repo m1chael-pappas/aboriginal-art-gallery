@@ -71,7 +71,7 @@ const inputCls =
 
     <FormField label="tribe">
       <select v-model="form.tribe_id" :class="inputCls">
-        <option :value="null">—</option>
+        <option :value="null">-</option>
         <option v-for="t in tribes.items" :key="t.id" :value="t.id">
           {{ t.name }}
         </option>

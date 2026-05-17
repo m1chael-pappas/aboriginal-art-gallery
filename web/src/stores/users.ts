@@ -11,7 +11,7 @@ export const useUsersStore = defineStore('users', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // GET /users — keeps the failure message in `error` (non-throwing) so the
+  // GET /users - keeps the failure message in `error` (non-throwing) so the
   // list view can render it inline, matching the other index views.
   async function fetchAll() {
     loading.value = true

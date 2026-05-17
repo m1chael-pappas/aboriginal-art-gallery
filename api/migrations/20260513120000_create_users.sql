@@ -1,4 +1,4 @@
--- Case-insensitive text — `email CITEXT UNIQUE` rejects "Foo@x" and "foo@x"
+-- Case-insensitive text - `email CITEXT UNIQUE` rejects "Foo@x" and "foo@x"
 -- as duplicates without app-level lowercasing, and the unique constraint
 -- doubles as the login lookup index.
 CREATE EXTENSION IF NOT EXISTS citext;

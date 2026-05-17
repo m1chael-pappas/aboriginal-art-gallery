@@ -1,4 +1,4 @@
-//! Users bounded context — accounts, role-based authorisation, and the
+//! Users bounded context - accounts, role-based authorisation, and the
 //! Argon2 + JWT auth flow built on top of [`crate::auth`].
 
 pub mod model;

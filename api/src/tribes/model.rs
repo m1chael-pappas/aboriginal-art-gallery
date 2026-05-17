@@ -13,7 +13,7 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Tribe {
     pub id: Uuid,
-    /// Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint —
+    /// Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint -
     /// duplicate creates surface as 409 Conflict.
     pub name: String,
     /// Broad geographic descriptor (e.g. "Western Desert").
@@ -32,7 +32,7 @@ pub struct Tribe {
 }
 
 /// Request body for `POST /tribes` and `PUT /tribes/{id}`. Territory is
-/// intentionally excluded — it has its own endpoint pair.
+/// intentionally excluded - it has its own endpoint pair.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct TribeInput {
     pub name: String,

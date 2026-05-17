@@ -11,7 +11,7 @@ use crate::auth::Role;
 ///
 /// `password_hash` is held in the struct so the repo doesn't need a second
 /// fetch on login, but `#[serde(skip_serializing)]` keeps it out of every
-/// API response — clients only ever see the safe fields. The matching
+/// API response - clients only ever see the safe fields. The matching
 /// `#[schema(write_only)]` flag advertises the same constraint in the
 /// OpenAPI doc.
 #[derive(Debug, Serialize, ToSchema)]
@@ -50,7 +50,7 @@ pub struct LoginInput {
     pub password: String,
 }
 
-/// Response from `/auth/register` and `/auth/login` — the issued JWT plus
+/// Response from `/auth/register` and `/auth/login` - the issued JWT plus
 /// the (sanitised) user so the FE can stash both without a second
 /// `/auth/me` round-trip.
 #[derive(Debug, Serialize, ToSchema)]
@@ -62,7 +62,7 @@ pub struct AuthResponse {
 /// Patch shape for `PUT /users/{id}`.
 ///
 /// Every field is optional; the repo applies `COALESCE`, leaving omitted
-/// fields untouched. `role` is admin-only — the handler enforces that before
+/// fields untouched. `role` is admin-only - the handler enforces that before
 /// calling the repo, so a regular user can change their own email/password
 /// without being able to escalate.
 #[derive(Debug, Deserialize, ToSchema)]

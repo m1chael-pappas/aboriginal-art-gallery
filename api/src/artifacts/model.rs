@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-/// A single work in the collection — painting, bark, sculpture, ceremonial
+/// A single work in the collection - painting, bark, sculpture, ceremonial
 /// piece. `artist_id` is required (every artifact has a maker); dimensions
 /// and metadata are optional because not every record is fully catalogued.
 #[derive(Debug, Serialize, ToSchema)]
@@ -14,11 +14,11 @@ pub struct Artifact {
     pub title: String,
     /// FK to [`crate::artists::model::Artist`]; `ON DELETE RESTRICT`.
     pub artist_id: Uuid,
-    /// Broad classification — e.g. "painting", "sculpture", "bark".
+    /// Broad classification - e.g. "painting", "sculpture", "bark".
     pub art_type: Option<String>,
-    /// Narrower stylistic label — e.g. "Western Desert", "Yirrkala bark".
+    /// Narrower stylistic label - e.g. "Western Desert", "Yirrkala bark".
     pub art_style: Option<String>,
-    /// Materials and technique — e.g. "Synthetic polymer paint on canvas".
+    /// Materials and technique - e.g. "Synthetic polymer paint on canvas".
     pub medium: Option<String>,
     pub year_created: Option<i16>,
     /// Physical dimensions in centimetres. A DB CHECK enforces positivity.

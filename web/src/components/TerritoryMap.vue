@@ -17,7 +17,7 @@ const el = ref<HTMLDivElement | null>(null)
 let map: L.Map | null = null
 let layer: L.GeoJSON | null = null
 
-// Australia, roughly — the view before (or instead of) a fitted polygon.
+// Australia, roughly - the view before (or instead of) a fitted polygon.
 const AUS_CENTER: L.LatLngExpression = [-25.6, 134.4]
 
 function draw() {

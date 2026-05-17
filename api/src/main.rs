@@ -5,8 +5,9 @@
 //! [`gallery_api::build_router`] on `127.0.0.1:8080`.
 
 use std::net::SocketAddr;
+use std::sync::Arc;
 
-use gallery_api::{auth::JwtSecret, build_router, state::AppState};
+use gallery_api::{artists::PgArtistStore, auth::JwtSecret, build_router, state::AppState};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -32,9 +33,16 @@ async fn main() -> anyhow::Result<()> {
 
     let jwt_secret = JwtSecret::from_env()?;
 
+    let artists = Arc::new(PgArtistStore::new(pool.clone()));
+
     let cors = CorsLayer::permissive();
 
-    let app = build_router(AppState { pool, jwt_secret }).layer(cors);
+    let app = build_router(AppState {
+        pool,
+        jwt_secret,
+        artists,
+    })
+    .layer(cors);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     let listener = tokio::net::TcpListener::bind(addr).await?;

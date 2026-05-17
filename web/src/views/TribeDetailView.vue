@@ -141,18 +141,18 @@ async function onDelete() {
 
       <dl class="grid grid-cols-[140px_1fr] gap-x-6 gap-y-3 text-sm max-w-3xl mb-12">
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">region</dt>
-        <dd class="text-ink">{{ tribe.region ?? '—' }}</dd>
+        <dd class="text-ink">{{ tribe.region ?? '-' }}</dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
           language group
         </dt>
-        <dd class="text-ink">{{ tribe.language_group ?? '—' }}</dd>
+        <dd class="text-ink">{{ tribe.language_group ?? '-' }}</dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
           description
         </dt>
         <dd class="text-ink leading-relaxed whitespace-pre-line">
-          {{ tribe.description ?? '—' }}
+          {{ tribe.description ?? '-' }}
         </dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
@@ -165,7 +165,7 @@ async function onDelete() {
               · {{ polygonCount }} {{ polygonCount === 1 ? 'polygon' : 'polygons' }}
             </span>
           </template>
-          <span v-else class="text-muted">—</span>
+          <span v-else class="text-muted">-</span>
         </dd>
       </dl>
 

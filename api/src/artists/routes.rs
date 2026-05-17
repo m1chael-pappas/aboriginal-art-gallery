@@ -1,5 +1,10 @@
 //! HTTP handlers for the Artists BC. Reads are public; writes require an
 //! Admin-role JWT.
+//!
+//! Handlers talk to the [`ArtistStore`](super::store::ArtistStore) trait
+//! object held in [`AppState`], never to a concrete database type - so the
+//! same handler runs against `PgArtistStore` in production and an in-memory
+//! fake under test.
 
 use axum::{
     Json, Router,
@@ -9,10 +14,7 @@ use axum::{
 };
 use uuid::Uuid;
 
-use super::{
-    model::{Artist, ArtistInput},
-    repo,
-};
+use super::model::{Artist, ArtistInput};
 use crate::{
     auth::AdminUser,
     error::{AppError, AppResult},
@@ -30,7 +32,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-/// `GET /artists` — every artist in the archive, ordered by display name.
+/// `GET /artists` - every artist in the archive, ordered by display name.
 #[utoipa::path(
     get,
     path = "/artists",
@@ -40,11 +42,11 @@ pub fn router() -> Router<AppState> {
     ),
 )]
 pub(crate) async fn list_artists(State(state): State<AppState>) -> AppResult<Json<Vec<Artist>>> {
-    let artists = repo::list(&state.pool).await?;
+    let artists = state.artists.list().await?;
     Ok(Json(artists))
 }
 
-/// `GET /artists/{id}` — one artist by id, 404 if not found.
+/// `GET /artists/{id}` - one artist by id, 404 if not found.
 #[utoipa::path(
     get,
     path = "/artists/{id}",
@@ -59,11 +61,11 @@ pub(crate) async fn get_artist(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<Artist>> {
-    let artist = repo::find(&state.pool, id).await?;
+    let artist = state.artists.find(id).await?;
     Ok(Json(artist))
 }
 
-/// `POST /artists` — admin-only create.
+/// `POST /artists` - admin-only create.
 #[utoipa::path(
     post,
     path = "/artists",
@@ -83,11 +85,11 @@ pub(crate) async fn create_artist(
     Json(input): Json<ArtistInput>,
 ) -> AppResult<(StatusCode, Json<Artist>)> {
     input.validate().map_err(AppError::Validation)?;
-    let artist = repo::create(&state.pool, input).await?;
+    let artist = state.artists.create(input).await?;
     Ok((StatusCode::CREATED, Json(artist)))
 }
 
-/// `PUT /artists/{id}` — admin-only full replacement (PUT semantics, not patch).
+/// `PUT /artists/{id}` - admin-only full replacement (PUT semantics, not patch).
 #[utoipa::path(
     put,
     path = "/artists/{id}",
@@ -110,11 +112,11 @@ pub(crate) async fn update_artist(
     Json(input): Json<ArtistInput>,
 ) -> AppResult<Json<Artist>> {
     input.validate().map_err(AppError::Validation)?;
-    let artist = repo::update(&state.pool, id, input).await?;
+    let artist = state.artists.update(id, input).await?;
     Ok(Json(artist))
 }
 
-/// `DELETE /artists/{id}` — admin-only. 409 if any artifact still references
+/// `DELETE /artists/{id}` - admin-only. 409 if any artifact still references
 /// this artist (`ON DELETE RESTRICT`).
 #[utoipa::path(
     delete,
@@ -135,6 +137,6 @@ pub(crate) async fn delete_artist(
     _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    repo::delete(&state.pool, id).await?;
+    state.artists.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }

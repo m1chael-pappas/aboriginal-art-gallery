@@ -54,8 +54,8 @@ const routes = computed(() => [
         <p
           class="mt-5 text-sm text-muted max-w-xl leading-relaxed"
         >
-          A curated set of works from across the continent — paintings, sculptures,
-          and traditional pieces — alongside the artists and tribes that produced them.
+          A curated set of works from across the continent - paintings, sculptures,
+          and traditional pieces - alongside the artists and tribes that produced them.
         </p>
       </div>
       <div

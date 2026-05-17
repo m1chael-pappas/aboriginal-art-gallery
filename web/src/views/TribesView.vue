@@ -102,8 +102,8 @@ function pad(n: number): string {
       >
         <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
         <span class="text-ink">{{ tribe.name }}</span>
-        <span class="text-muted">{{ tribe.region ?? '—' }}</span>
-        <span class="text-muted">{{ tribe.language_group ?? '—' }}</span>
+        <span class="text-muted">{{ tribe.region ?? '-' }}</span>
+        <span class="text-muted">{{ tribe.language_group ?? '-' }}</span>
         <span class="font-mono text-xs text-ochre text-right">
           {{ artistsInTribe(tribe.id) }}
         </span>

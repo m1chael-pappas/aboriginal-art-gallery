@@ -210,7 +210,7 @@ async fn write_to_artists_as_admin_succeeds(pool: PgPool) {
 #[sqlx::test]
 async fn write_to_artifacts_without_token_returns_401(pool: PgPool) {
     let client = TestClient::new(pool);
-    // artist_id can be any uuid — auth runs before validation
+    // artist_id can be any uuid - auth runs before validation
     let (status, _) = client
         .post(
             "/artifacts",

@@ -8,7 +8,7 @@
 //!
 //!     cargo run --bin seed
 //!
-//! Idempotent — every run gives you the same end state. Destroys any
+//! Idempotent - every run gives you the same end state. Destroys any
 //! existing rows in artifacts/artists/tribes; users are upserted (existing
 //! accounts stay, the admin's password gets reset to the default).
 
@@ -300,7 +300,7 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some("Depicts the rockhole site of Marrapinti, west of Pollock Hills, where ancestral women gathered."),
         ),
         (
-            "Garak — The Universe",
+            "Garak - The Universe",
             "Gulumbu Yunupingu",
             Some("painting"),
             Some("Yirrkala bark"),
@@ -308,7 +308,7 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(2004),
             Some(155),
             Some(60),
-            Some("A bark painting representing the vastness of Garak — the universe — and the artist's place within it."),
+            Some("A bark painting representing the vastness of Garak - the universe - and the artist's place within it."),
         ),
         (
             "Jilamara",
@@ -355,7 +355,7 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
 /// endpoints (/tribes/near, /tribes/{id}/territory) have something to return
 /// for demos.
 ///
-/// These boxes are intentionally crude — they're big enough to make
+/// These boxes are intentionally crude - they're big enough to make
 /// `ST_DWithin` queries hit the GiST index in a recognisable way, but they
 /// are **not** authoritative boundaries of traditional Country.
 async fn seed_territories(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<()> {

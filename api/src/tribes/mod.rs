@@ -1,4 +1,4 @@
-//! Tribes bounded context — peoples, language groups, and (optional)
+//! Tribes bounded context - peoples, language groups, and (optional)
 //! PostGIS territory polygons.
 
 pub mod model;

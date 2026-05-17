@@ -1,7 +1,7 @@
 //! Data access for the Users table.
 //!
 //! `CITEXT` columns are selected via an explicit `::TEXT` cast so sqlx maps
-//! them to `String` without needing a custom type — the cast is free at
+//! them to `String` without needing a custom type - the cast is free at
 //! runtime (CITEXT is binary-compatible with TEXT) and makes the macro's
 //! type introspection happy on every Postgres version.
 
@@ -44,7 +44,7 @@ pub async fn find(pool: &PgPool, id: Uuid) -> AppResult<User> {
     .ok_or(AppError::NotFound)
 }
 
-/// Look up a user by login email. Returns `Ok(None)` for "no such user" —
+/// Look up a user by login email. Returns `Ok(None)` for "no such user" -
 /// the login handler turns that into a 401 with the same generic message
 /// as a password mismatch.
 pub async fn find_by_email(pool: &PgPool, email: &str) -> AppResult<Option<User>> {
@@ -88,7 +88,7 @@ pub async fn create(
     .map_err(map_unique_violation)
 }
 
-/// Partial update via `COALESCE` — passing `None` for a column leaves it
+/// Partial update via `COALESCE` - passing `None` for a column leaves it
 /// untouched.
 ///
 /// The caller is responsible for already-hashing the password and for
@@ -134,7 +134,7 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
 }
 
 /// SQLSTATE 23505 = unique_violation. The only UNIQUE constraint on `users`
-/// is `email`, so any 23505 here means a duplicate email — surface as 409.
+/// is `email`, so any 23505 here means a duplicate email - surface as 409.
 fn map_unique_violation(err: sqlx::Error) -> AppError {
     if let sqlx::Error::Database(db_err) = &err {
         if db_err.code().as_deref() == Some("23505") {

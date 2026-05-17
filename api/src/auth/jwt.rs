@@ -1,4 +1,4 @@
-//! JWT issuance and verification — HS256, with `sub` / `email` / `role` /
+//! JWT issuance and verification - HS256, with `sub` / `email` / `role` /
 //! `iat` / `exp` claims and a 24-hour TTL.
 
 use chrono::{Duration, Utc};
@@ -76,7 +76,7 @@ impl Claims {
 /// Encoding + decoding keys derived from `JWT_SECRET`.
 ///
 /// The keys are internally `Arc`-shaped, so cloning the wrapper across
-/// requests is cheap — stash it in [`crate::state::AppState`] once at
+/// requests is cheap - stash it in [`crate::state::AppState`] once at
 /// startup.
 #[derive(Clone)]
 pub struct JwtSecret {

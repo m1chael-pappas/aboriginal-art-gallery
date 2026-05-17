@@ -66,7 +66,7 @@ const inputCls =
 
     <FormField label="artist" required>
       <select v-model="form.artist_id" required :class="inputCls">
-        <option value="" disabled>— select —</option>
+        <option value="" disabled>- select -</option>
         <option v-for="a in artists.items" :key="a.id" :value="a.id">
           {{ a.display_name }}
         </option>

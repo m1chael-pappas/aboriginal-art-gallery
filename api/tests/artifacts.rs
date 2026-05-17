@@ -6,7 +6,7 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-// Most artifact tests need an artist to attach to — this seeds one and
+// Most artifact tests need an artist to attach to - this seeds one and
 // returns its id.
 async fn create_artist(client: &TestClient, name: &str) -> Uuid {
     let (status, body) = client

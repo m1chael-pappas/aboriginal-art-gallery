@@ -110,7 +110,7 @@ const router = createRouter({
 })
 
 // Guard for routes flagged `meta.requiresAdmin`. Unauthenticated callers go
-// to /login with a redirect param; authenticated non-admins go back home —
+// to /login with a redirect param; authenticated non-admins go back home -
 // they shouldn't see a login page when their token is fine, just not
 // privileged enough.
 router.beforeEach((to) => {

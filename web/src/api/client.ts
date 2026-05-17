@@ -21,7 +21,7 @@ export function extractError(err: unknown): string {
   return err instanceof Error ? err.message : 'unknown error'
 }
 
-// Lazy import — the auth store and this module form a cycle (store uses api,
+// Lazy import - the auth store and this module form a cycle (store uses api,
 // api needs the store for interceptors), and resolving the import inside the
 // interceptor callbacks avoids the circular-init footgun.
 async function getAuthStore() {

@@ -32,8 +32,8 @@ const worksByArtistId = computed(() => {
 })
 
 function era(birth: number | null, death: number | null): string {
-  if (birth === null && death === null) return '—'
-  return `${birth ?? '?'}–${death ?? 'present'}`
+  if (birth === null && death === null) return '-'
+  return `${birth ?? '?'}-${death ?? 'present'}`
 }
 
 function pad(n: number): string {
@@ -88,7 +88,7 @@ function pad(n: number): string {
       >
         <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
         <span class="text-ink">{{ artist.display_name }}</span>
-        <span class="text-muted">{{ tribeNameById.get(artist.tribe_id ?? '') ?? '—' }}</span>
+        <span class="text-muted">{{ tribeNameById.get(artist.tribe_id ?? '') ?? '-' }}</span>
         <span class="font-mono text-xs text-ink">
           {{ era(artist.birth_year, artist.death_year) }}
         </span>

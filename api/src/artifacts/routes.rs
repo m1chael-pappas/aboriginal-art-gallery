@@ -31,7 +31,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-/// `GET /artifacts` — every artifact in the collection, ordered by title.
+/// `GET /artifacts` - every artifact in the collection, ordered by title.
 #[utoipa::path(
     get,
     path = "/artifacts",
@@ -45,7 +45,7 @@ pub(crate) async fn list_artifacts(State(state): State<AppState>) -> AppResult<J
     Ok(Json(artifacts))
 }
 
-/// `GET /artifacts/{id}` — one artifact by id.
+/// `GET /artifacts/{id}` - one artifact by id.
 #[utoipa::path(
     get,
     path = "/artifacts/{id}",
@@ -64,7 +64,7 @@ pub(crate) async fn get_artifact(
     Ok(Json(artifact))
 }
 
-/// `POST /artifacts` — admin-only create.
+/// `POST /artifacts` - admin-only create.
 #[utoipa::path(
     post,
     path = "/artifacts",
@@ -88,7 +88,7 @@ pub(crate) async fn create_artifact(
     Ok((StatusCode::CREATED, Json(artifact)))
 }
 
-/// `PUT /artifacts/{id}` — admin-only full replacement.
+/// `PUT /artifacts/{id}` - admin-only full replacement.
 #[utoipa::path(
     put,
     path = "/artifacts/{id}",
@@ -115,7 +115,7 @@ pub(crate) async fn update_artifact(
     Ok(Json(artifact))
 }
 
-/// `DELETE /artifacts/{id}` — admin-only.
+/// `DELETE /artifacts/{id}` - admin-only.
 #[utoipa::path(
     delete,
     path = "/artifacts/{id}",

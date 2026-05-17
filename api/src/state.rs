@@ -1,8 +1,11 @@
-//! Shared request-scope state — handed to every handler via `State<AppState>`.
+//! Shared request-scope state - handed to every handler via `State<AppState>`.
+
+use std::sync::Arc;
 
 use axum::extract::FromRef;
 use sqlx::PgPool;
 
+use crate::artists::ArtistStore;
 use crate::auth::JwtSecret;
 
 /// Application state cloned into each request's extractor context.
@@ -15,6 +18,13 @@ use crate::auth::JwtSecret;
 pub struct AppState {
     pub pool: PgPool,
     pub jwt_secret: JwtSecret,
+    /// Artists persistence behind a trait object, so the Artists handlers
+    /// depend on the [`ArtistStore`] abstraction rather than a concrete
+    /// database type. This is the "program to an interface, inject the
+    /// implementation" seam: production wires a `PgArtistStore`, unit tests
+    /// wire an in-memory fake. (Reference pattern; the other contexts still
+    /// call their concrete repos directly.)
+    pub artists: Arc<dyn ArtistStore>,
 }
 
 /// Lets axum's [`FromRequestParts`](axum::extract::FromRequestParts)

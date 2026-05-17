@@ -11,7 +11,7 @@ use axum::{
 use super::{Claims, JwtSecret, Role};
 use crate::error::AppError;
 
-/// Authenticated request — the caller presented a valid (non-expired,
+/// Authenticated request - the caller presented a valid (non-expired,
 /// correctly-signed) bearer token. Use this when *any* logged-in user may
 /// hit the endpoint; use [`AdminUser`] when the route is restricted
 /// further.

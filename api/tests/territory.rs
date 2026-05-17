@@ -6,7 +6,7 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-// A simple square Polygon spanning a couple of degrees around 0°/0° — easy
+// A simple square Polygon spanning a couple of degrees around 0°/0° - easy
 // to reason about for "point inside / point outside" assertions.
 fn square_polygon(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> serde_json::Value {
     json!({
@@ -186,7 +186,7 @@ async fn search_near_rejects_out_of_range_coords(pool: PgPool) {
 
 #[sqlx::test]
 async fn search_near_is_public(pool: PgPool) {
-    // No token needed — reads are public, including this spatial one.
+    // No token needed - reads are public, including this spatial one.
     let client = TestClient::new(pool);
     let (status, body) = client.get("/tribes/near?lat=0&lng=0&km=10").await;
     assert_eq!(status, StatusCode::OK);

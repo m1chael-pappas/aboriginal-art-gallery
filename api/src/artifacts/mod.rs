@@ -1,4 +1,4 @@
-//! Artifacts bounded context — works, attributed to an artist.
+//! Artifacts bounded context - works, attributed to an artist.
 
 pub mod model;
 mod repo;

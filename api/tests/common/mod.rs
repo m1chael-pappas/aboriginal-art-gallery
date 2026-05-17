@@ -8,9 +8,11 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 
-use gallery_api::{auth::JwtSecret, build_router, state::AppState};
+use std::sync::Arc;
 
-/// 32+ bytes — the only constraint JwtSecret::from_env enforces. The exact
+use gallery_api::{artists::PgArtistStore, auth::JwtSecret, build_router, state::AppState};
+
+/// 32+ bytes - the only constraint JwtSecret::from_env enforces. The exact
 /// value is irrelevant: each test gets a fresh DB, and tokens never outlive
 /// the test process.
 const TEST_JWT_SECRET: &[u8] = b"test-secret-test-secret-test-secret-32b";
@@ -27,6 +29,7 @@ impl TestClient {
         let app = build_router(AppState {
             pool: pool.clone(),
             jwt_secret,
+            artists: Arc::new(PgArtistStore::new(pool.clone())),
         });
         Self {
             app,

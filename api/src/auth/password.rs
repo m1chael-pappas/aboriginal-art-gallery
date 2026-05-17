@@ -10,8 +10,8 @@ use crate::error::{AppError, AppResult};
 /// Hash a plaintext password with Argon2id and the crate's default
 /// parameters (m = 19456 KiB, t = 2, p = 1).
 ///
-/// The returned string is a self-describing PHC encoding — algorithm,
-/// params, salt, and hash all in one column — so the DB row has everything
+/// The returned string is a self-describing PHC encoding - algorithm,
+/// params, salt, and hash all in one column - so the DB row has everything
 /// [`verify_password`] needs to authenticate later.
 pub fn hash_password(plain: &str) -> AppResult<String> {
     let salt = SaltString::generate(&mut OsRng);
@@ -27,7 +27,7 @@ pub fn hash_password(plain: &str) -> AppResult<String> {
 /// Verify a plaintext password against a PHC-encoded hash.
 ///
 /// `Ok(true)` means the password matches. `Ok(false)` means the hash parsed
-/// fine but the password is wrong (a user-facing failure — return 401). The
+/// fine but the password is wrong (a user-facing failure - return 401). The
 /// only `Err` path is a *malformed* stored hash, which is a data-integrity
 /// bug and bubbles up as a 500.
 pub fn verify_password(plain: &str, phc_hash: &str) -> AppResult<bool> {

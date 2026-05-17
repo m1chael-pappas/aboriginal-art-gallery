@@ -83,7 +83,7 @@ use crate::{
         User, RegisterInput, LoginInput, AuthResponse, UserUpdate, Role,
     )),
     tags(
-        (name = "artists",   description = "Individual makers — biographies, era, tribal affiliation"),
+        (name = "artists",   description = "Individual makers - biographies, era, tribal affiliation"),
         (name = "artifacts", description = "Objects, paintings, and ceremonial pieces"),
         (name = "tribes",    description = "Aboriginal peoples, language groups, and PostGIS territory"),
         (name = "auth",      description = "Register, login, and the current-user endpoint"),

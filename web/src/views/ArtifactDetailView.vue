@@ -121,39 +121,39 @@ async function onDelete() {
             >
               {{ artist.display_name }}
             </RouterLink>
-            <span v-else>—</span>
+            <span v-else>-</span>
           </dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             year
           </dt>
-          <dd class="font-mono text-ink">{{ artifact.year_created ?? '—' }}</dd>
+          <dd class="font-mono text-ink">{{ artifact.year_created ?? '-' }}</dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             type
           </dt>
-          <dd class="text-ink">{{ artifact.art_type ?? '—' }}</dd>
+          <dd class="text-ink">{{ artifact.art_type ?? '-' }}</dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             style
           </dt>
-          <dd class="text-ink">{{ artifact.art_style ?? '—' }}</dd>
+          <dd class="text-ink">{{ artifact.art_style ?? '-' }}</dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             medium
           </dt>
-          <dd class="text-ink">{{ artifact.medium ?? '—' }}</dd>
+          <dd class="text-ink">{{ artifact.medium ?? '-' }}</dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             dimensions
           </dt>
-          <dd class="font-mono text-ink">{{ dimensions ?? '—' }}</dd>
+          <dd class="font-mono text-ink">{{ dimensions ?? '-' }}</dd>
 
           <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
             description
           </dt>
           <dd class="text-ink leading-relaxed whitespace-pre-line">
-            {{ artifact.description ?? '—' }}
+            {{ artifact.description ?? '-' }}
           </dd>
         </dl>
       </div>

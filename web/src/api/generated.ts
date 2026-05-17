@@ -11,10 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /artifacts` — every artifact in the collection, ordered by title. */
+        /** `GET /artifacts` - every artifact in the collection, ordered by title. */
         get: operations["list_artifacts"];
         put?: never;
-        /** `POST /artifacts` — admin-only create. */
+        /** `POST /artifacts` - admin-only create. */
         post: operations["create_artifact"];
         delete?: never;
         options?: never;
@@ -29,12 +29,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /artifacts/{id}` — one artifact by id. */
+        /** `GET /artifacts/{id}` - one artifact by id. */
         get: operations["get_artifact"];
-        /** `PUT /artifacts/{id}` — admin-only full replacement. */
+        /** `PUT /artifacts/{id}` - admin-only full replacement. */
         put: operations["update_artifact"];
         post?: never;
-        /** `DELETE /artifacts/{id}` — admin-only. */
+        /** `DELETE /artifacts/{id}` - admin-only. */
         delete: operations["delete_artifact"];
         options?: never;
         head?: never;
@@ -48,10 +48,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /artists` — every artist in the archive, ordered by display name. */
+        /** `GET /artists` - every artist in the archive, ordered by display name. */
         get: operations["list_artists"];
         put?: never;
-        /** `POST /artists` — admin-only create. */
+        /** `POST /artists` - admin-only create. */
         post: operations["create_artist"];
         delete?: never;
         options?: never;
@@ -66,13 +66,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /artists/{id}` — one artist by id, 404 if not found. */
+        /** `GET /artists/{id}` - one artist by id, 404 if not found. */
         get: operations["get_artist"];
-        /** `PUT /artists/{id}` — admin-only full replacement (PUT semantics, not patch). */
+        /** `PUT /artists/{id}` - admin-only full replacement (PUT semantics, not patch). */
         put: operations["update_artist"];
         post?: never;
         /**
-         * `DELETE /artists/{id}` — admin-only. 409 if any artifact still references
+         * `DELETE /artists/{id}` - admin-only. 409 if any artifact still references
          *     this artist (`ON DELETE RESTRICT`).
          */
         delete: operations["delete_artist"];
@@ -91,9 +91,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * `POST /auth/login` — public.
+         * `POST /auth/login` - public.
          * @description Looks up the user by email *first*. Argon2 verify is the expensive step,
-         *     so it would be tempting to skip it when the user doesn't exist — but
+         *     so it would be tempting to skip it when the user doesn't exist - but
          *     that creates a timing oracle for enumerating valid emails. We accept
          *     the small leak (no hash to verify on miss) in exchange for a simpler
          *     handler; a fully timing-safe variant would verify against a dummy hash
@@ -113,7 +113,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /auth/me` — the user identified by the bearer token. */
+        /** `GET /auth/me` - the user identified by the bearer token. */
         get: operations["me"];
         put?: never;
         post?: never;
@@ -133,7 +133,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * `POST /auth/register` — public. Creates a `role=User` account and
+         * `POST /auth/register` - public. Creates a `role=User` account and
          *     returns an Auth response (token + user) so the FE doesn't need a
          *     follow-up login call.
          */
@@ -151,10 +151,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /tribes` — every tribe in the archive, ordered by name. */
+        /** `GET /tribes` - every tribe in the archive, ordered by name. */
         get: operations["list_tribes"];
         put?: never;
-        /** `POST /tribes` — admin-only create. */
+        /** `POST /tribes` - admin-only create. */
         post: operations["create_tribe"];
         delete?: never;
         options?: never;
@@ -170,7 +170,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * `GET /tribes/near?lat=&lng=&km=` — public spatial query. Returns tribes
+         * `GET /tribes/near?lat=&lng=&km=` - public spatial query. Returns tribes
          *     whose territory lies within `km` of the point, nearest first. Powered by
          *     PostGIS `ST_DWithin` over the GiST index on `tribes.territory`.
          */
@@ -190,16 +190,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /tribes/{id}` — one tribe with its territory (if set) as GeoJSON. */
+        /** `GET /tribes/{id}` - one tribe with its territory (if set) as GeoJSON. */
         get: operations["get_tribe"];
         /**
-         * `PUT /tribes/{id}` — admin-only full replacement. Territory is preserved
-         *     — use the dedicated endpoints to change it.
+         * `PUT /tribes/{id}` - admin-only full replacement. Territory is preserved
+         *     - use the dedicated endpoints to change it.
          */
         put: operations["update_tribe"];
         post?: never;
         /**
-         * `DELETE /tribes/{id}` — admin-only. Affiliated artists have their
+         * `DELETE /tribes/{id}` - admin-only. Affiliated artists have their
          *     `tribe_id` set to NULL (`ON DELETE SET NULL`).
          */
         delete: operations["delete_tribe"];
@@ -217,13 +217,13 @@ export interface paths {
         };
         get?: never;
         /**
-         * `PUT /tribes/{id}/territory` — admin-only. Body is a GeoJSON Polygon or
+         * `PUT /tribes/{id}/territory` - admin-only. Body is a GeoJSON Polygon or
          *     MultiPolygon in EPSG:4326; Polygon is auto-lifted to MultiPolygon.
          */
         put: operations["set_territory"];
         post?: never;
         /**
-         * `DELETE /tribes/{id}/territory` — admin-only. Sets the territory column
+         * `DELETE /tribes/{id}/territory` - admin-only. Sets the territory column
          *     back to NULL; the tribe itself stays.
          */
         delete: operations["clear_territory"];
@@ -239,7 +239,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** `GET /users` — admin-only listing of every account. */
+        /** `GET /users` - admin-only listing of every account. */
         get: operations["list_users"];
         put?: never;
         post?: never;
@@ -257,18 +257,18 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * `GET /users/{id}` — admin can read anyone; regular users can read only
+         * `GET /users/{id}` - admin can read anyone; regular users can read only
          *     themselves.
          */
         get: operations["get_user"];
         /**
-         * `PUT /users/{id}` — admin can patch anyone; regular users can patch only
+         * `PUT /users/{id}` - admin can patch anyone; regular users can patch only
          *     themselves, and never `role` (escalation guard).
          */
         put: operations["update_user"];
         post?: never;
         /**
-         * `DELETE /users/{id}` — admin-only, with a guard against deleting *yourself*.
+         * `DELETE /users/{id}` - admin-only, with a guard against deleting *yourself*.
          * @description Refusing the self-delete keeps the gallery from ending up in a state
          *     where nobody can administer it. Cheap check, big payoff.
          */
@@ -283,14 +283,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * @description A single work in the collection — painting, bark, sculpture, ceremonial
+         * @description A single work in the collection - painting, bark, sculpture, ceremonial
          *     piece. `artist_id` is required (every artifact has a maker); dimensions
          *     and metadata are optional because not every record is fully catalogued.
          */
         Artifact: {
-            /** @description Narrower stylistic label — e.g. "Western Desert", "Yirrkala bark". */
+            /** @description Narrower stylistic label - e.g. "Western Desert", "Yirrkala bark". */
             art_style?: string | null;
-            /** @description Broad classification — e.g. "painting", "sculpture", "bark". */
+            /** @description Broad classification - e.g. "painting", "sculpture", "bark". */
             art_type?: string | null;
             /**
              * Format: uuid
@@ -309,7 +309,7 @@ export interface components {
             height_cm?: number | null;
             /** Format: uuid */
             id: string;
-            /** @description Materials and technique — e.g. "Synthetic polymer paint on canvas". */
+            /** @description Materials and technique - e.g. "Synthetic polymer paint on canvas". */
             medium?: string | null;
             title: string;
             /** Format: date-time */
@@ -358,7 +358,7 @@ export interface components {
              */
             death_year?: number | null;
             /**
-             * @description Name we display in the UI — typically the artist's published name,
+             * @description Name we display in the UI - typically the artist's published name,
              *     not necessarily a legal name.
              */
             display_name: string;
@@ -394,7 +394,7 @@ export interface components {
             tribe_id?: string | null;
         };
         /**
-         * @description Response from `/auth/register` and `/auth/login` — the issued JWT plus
+         * @description Response from `/auth/register` and `/auth/login` - the issued JWT plus
          *     the (sanitised) user so the FE can stash both without a second
          *     `/auth/me` round-trip.
          */
@@ -440,7 +440,7 @@ export interface components {
             /** @description Language family / group (e.g. "Yolngu Matha"). */
             language_group?: string | null;
             /**
-             * @description Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint —
+             * @description Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint -
              *     duplicate creates surface as 409 Conflict.
              */
             name: string;
@@ -458,7 +458,7 @@ export interface components {
         };
         /**
          * @description Request body for `POST /tribes` and `PUT /tribes/{id}`. Territory is
-         *     intentionally excluded — it has its own endpoint pair.
+         *     intentionally excluded - it has its own endpoint pair.
          */
         TribeInput: {
             description?: string | null;
@@ -471,7 +471,7 @@ export interface components {
          *
          *     `password_hash` is held in the struct so the repo doesn't need a second
          *     fetch on login, but `#[serde(skip_serializing)]` keeps it out of every
-         *     API response — clients only ever see the safe fields. The matching
+         *     API response - clients only ever see the safe fields. The matching
          *     `#[schema(write_only)]` flag advertises the same constraint in the
          *     OpenAPI doc.
          */
@@ -495,7 +495,7 @@ export interface components {
          * @description Patch shape for `PUT /users/{id}`.
          *
          *     Every field is optional; the repo applies `COALESCE`, leaving omitted
-         *     fields untouched. `role` is admin-only — the handler enforces that before
+         *     fields untouched. `role` is admin-only - the handler enforces that before
          *     calling the repo, so a regular user can change their own email/password
          *     without being able to escalate.
          */

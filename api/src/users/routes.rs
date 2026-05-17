@@ -35,7 +35,7 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-/// `POST /auth/register` — public. Creates a `role=User` account and
+/// `POST /auth/register` - public. Creates a `role=User` account and
 /// returns an Auth response (token + user) so the FE doesn't need a
 /// follow-up login call.
 #[utoipa::path(
@@ -64,10 +64,10 @@ pub(crate) async fn register(
     Ok((StatusCode::CREATED, Json(AuthResponse { token, user })))
 }
 
-/// `POST /auth/login` — public.
+/// `POST /auth/login` - public.
 ///
 /// Looks up the user by email *first*. Argon2 verify is the expensive step,
-/// so it would be tempting to skip it when the user doesn't exist — but
+/// so it would be tempting to skip it when the user doesn't exist - but
 /// that creates a timing oracle for enumerating valid emails. We accept
 /// the small leak (no hash to verify on miss) in exchange for a simpler
 /// handler; a fully timing-safe variant would verify against a dummy hash
@@ -102,7 +102,7 @@ pub(crate) async fn login(
     Ok(Json(AuthResponse { token, user }))
 }
 
-/// `GET /auth/me` — the user identified by the bearer token.
+/// `GET /auth/me` - the user identified by the bearer token.
 #[utoipa::path(
     get,
     path = "/auth/me",
@@ -118,7 +118,7 @@ pub(crate) async fn me(State(state): State<AppState>, auth: AuthUser) -> AppResu
     Ok(Json(user))
 }
 
-/// `GET /users` — admin-only listing of every account.
+/// `GET /users` - admin-only listing of every account.
 #[utoipa::path(
     get,
     path = "/users",
@@ -138,7 +138,7 @@ pub(crate) async fn list_users(
     Ok(Json(users))
 }
 
-/// `GET /users/{id}` — admin can read anyone; regular users can read only
+/// `GET /users/{id}` - admin can read anyone; regular users can read only
 /// themselves.
 #[utoipa::path(
     get,
@@ -163,7 +163,7 @@ pub(crate) async fn get_user(
     Ok(Json(user))
 }
 
-/// `PUT /users/{id}` — admin can patch anyone; regular users can patch only
+/// `PUT /users/{id}` - admin can patch anyone; regular users can patch only
 /// themselves, and never `role` (escalation guard).
 #[utoipa::path(
     put,
@@ -214,7 +214,7 @@ pub(crate) async fn update_user(
     Ok(Json(updated))
 }
 
-/// `DELETE /users/{id}` — admin-only, with a guard against deleting *yourself*.
+/// `DELETE /users/{id}` - admin-only, with a guard against deleting *yourself*.
 ///
 /// Refusing the self-delete keeps the gallery from ending up in a state
 /// where nobody can administer it. Cheap check, big payoff.

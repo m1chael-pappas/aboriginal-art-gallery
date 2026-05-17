@@ -1,7 +1,7 @@
 //! Data access for the Tribes table, including the PostGIS round-trips for
 //! the `territory` column.
 //!
-//! `territory` is a `geography(MultiPolygon, 4326)` — not a type sqlx knows
+//! `territory` is a `geography(MultiPolygon, 4326)` - not a type sqlx knows
 //! natively. We round-trip it through GeoJSON: `ST_AsGeoJSON` produces a
 //! text representation that the `::JSONB` cast turns into a JSONB column,
 //! which the `json` sqlx feature decodes straight into `serde_json::Value`.
@@ -73,7 +73,7 @@ pub async fn create(pool: &PgPool, input: TribeInput) -> AppResult<Tribe> {
 }
 
 /// Replace every field on an existing tribe (PUT semantics). Territory is
-/// untouched — use [`set_territory`] for that.
+/// untouched - use [`set_territory`] for that.
 pub async fn update(pool: &PgPool, id: Uuid, input: TribeInput) -> AppResult<Tribe> {
     sqlx::query_as!(
         Tribe,
@@ -101,7 +101,7 @@ pub async fn update(pool: &PgPool, id: Uuid, input: TribeInput) -> AppResult<Tri
 }
 
 /// Delete a tribe. `artists.tribe_id` is `ON DELETE SET NULL`, so deletes
-/// don't cascade — affiliated artists just lose the link.
+/// don't cascade - affiliated artists just lose the link.
 pub async fn delete(pool: &PgPool, id: Uuid) -> AppResult<()> {
     let result = sqlx::query!("DELETE FROM tribes WHERE id = $1", id)
         .execute(pool)
@@ -154,7 +154,7 @@ pub async fn set_territory(
 /// ordered by distance so the closest match comes first.
 ///
 /// Uses `ST_DWithin` on the `geography` column, which goes through the GiST
-/// index added in the territory migration — without that index this query
+/// index added in the territory migration - without that index this query
 /// would full-scan and call `ST_Distance` on every row.
 pub async fn search_near(
     pool: &PgPool,
@@ -202,7 +202,7 @@ fn map_unique_violation(err: sqlx::Error) -> AppError {
 }
 
 /// `ST_GeomFromGeoJSON` raises SQLSTATE XX000 with a helpful message when
-/// the GeoJSON is malformed. Translate to 400 — the client's input is the
+/// the GeoJSON is malformed. Translate to 400 - the client's input is the
 /// cause, not our server.
 fn map_geojson_parse_error(err: sqlx::Error) -> AppError {
     if let sqlx::Error::Database(db_err) = &err {

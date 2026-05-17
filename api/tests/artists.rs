@@ -145,7 +145,7 @@ async fn update_artist_replaces_fields(pool: PgPool) {
     assert_eq!(body["display_name"], "New Name");
     assert_eq!(body["birth_year"], 1900);
     assert_eq!(body["biography"], "New bio");
-    // PUT replaces — fields not sent become null
+    // PUT replaces - fields not sent become null
     assert!(body["region"].is_null());
 }
 
@@ -234,7 +234,7 @@ async fn create_artist_rejects_unknown_tribe(pool: PgPool) {
 #[sqlx::test]
 async fn delete_artist_with_artifacts_returns_409(pool: PgPool) {
     // ON DELETE RESTRICT on artifacts.artist_id should surface as a 409
-    // Conflict, not a 500 — the user can't delete an artist whose artworks
+    // Conflict, not a 500 - the user can't delete an artist whose artworks
     // still exist.
     let client = TestClient::new(pool).as_admin().await;
 

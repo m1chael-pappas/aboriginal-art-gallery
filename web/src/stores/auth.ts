@@ -84,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.get<User>('/auth/me')
       user.value = data
     } catch (e) {
-      // 401 will fire the response interceptor and clear us — anything else
+      // 401 will fire the response interceptor and clear us - anything else
       // is non-fatal; keep the cached user.
       if (!isAxiosUnauthorized(e)) throw new Error(extractError(e))
     }

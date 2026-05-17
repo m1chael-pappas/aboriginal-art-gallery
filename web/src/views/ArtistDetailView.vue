@@ -46,10 +46,10 @@ const works = computed(() => {
 })
 
 const era = computed(() => {
-  if (!artist.value) return '—'
+  if (!artist.value) return '-'
   const { birth_year, death_year } = artist.value
-  if (birth_year === null && death_year === null) return '—'
-  return `${birth_year ?? '?'}–${death_year ?? 'present'}`
+  if (birth_year === null && death_year === null) return '-'
+  return `${birth_year ?? '?'}-${death_year ?? 'present'}`
 })
 
 async function onDelete() {
@@ -112,18 +112,18 @@ async function onDelete() {
         <dd class="font-mono text-ink">{{ era }}</dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">region</dt>
-        <dd class="text-ink">{{ artist.region ?? '—' }}</dd>
+        <dd class="text-ink">{{ artist.region ?? '-' }}</dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">tribe</dt>
         <dd class="text-ink">
-          {{ tribeName ?? '—' }}
+          {{ tribeName ?? '-' }}
         </dd>
 
         <dt class="font-mono text-[10px] tracking-widest uppercase text-muted pt-1">
           biography
         </dt>
         <dd class="text-ink leading-relaxed whitespace-pre-line">
-          {{ artist.biography ?? '—' }}
+          {{ artist.biography ?? '-' }}
         </dd>
       </dl>
 
@@ -143,7 +143,7 @@ async function onDelete() {
           >
             <span class="text-ink">{{ w.title }}</span>
             <span class="font-mono text-xs text-muted text-right">
-              {{ w.year_created ?? '—' }}
+              {{ w.year_created ?? '-' }}
             </span>
             <span class="font-mono text-ochre text-right">→</span>
           </RouterLink>
