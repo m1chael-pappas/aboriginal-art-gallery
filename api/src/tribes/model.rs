@@ -10,7 +10,7 @@ use uuid::Uuid;
 /// An Aboriginal tribe / language group. `territory` is a PostGIS
 /// `geography(MultiPolygon, 4326)` column on the DB side, serialised to
 /// GeoJSON on the way out.
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct Tribe {
     pub id: Uuid,
     /// Display name (e.g. "Pintupi"). Subject to a `UNIQUE` constraint -
@@ -48,5 +48,35 @@ impl TribeInput {
             return Err("name cannot be empty".into());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Pure-logic unit tests for [`TribeInput::validate`] - no async, no DB.
+
+    use super::TribeInput;
+
+    fn base() -> TribeInput {
+        TribeInput {
+            name: "Pintupi".into(),
+            region: None,
+            language_group: None,
+            description: None,
+        }
+    }
+
+    #[test]
+    fn accepts_a_non_empty_name() {
+        assert!(base().validate().is_ok());
+    }
+
+    #[test]
+    fn rejects_empty_or_whitespace_name() {
+        let mut t = base();
+        t.name = String::new();
+        assert!(t.validate().is_err());
+        t.name = "   ".into();
+        assert!(t.validate().is_err());
     }
 }

@@ -1,19 +1,19 @@
 //! Persistence abstraction for the Artists BC.
 //!
 //! [`routes`](super::routes) depends on the [`ArtistStore`] trait, not on a
-//! concrete database type — the same "program to an interface, inject the
+//! concrete database type - the same "program to an interface, inject the
 //! implementation" layering used in the prior ASP.NET project, where
 //! controllers depended on `IRobotCommandDataAccess` with swappable ADO/EF
 //! backends. Two implementations are provided:
 //!
-//! - [`PgArtistStore`] — the production implementation, backed by
+//! - [`PgArtistStore`] - the production implementation, backed by
 //!   compile-time-checked `sqlx` queries.
-//! - [`InMemoryArtistStore`] — a faithful in-memory fake, so the store
+//! - [`InMemoryArtistStore`] - a faithful in-memory fake, so the store
 //!   contract and the handlers can be unit-tested without a database.
 //!
 //! Cross-aggregate rules that physically live in the database (the
 //! `tribe_id` foreign key, the `ON DELETE RESTRICT` from artifacts) are
-//! deliberately *not* re-implemented by the in-memory fake — those are the
+//! deliberately *not* re-implemented by the in-memory fake - those are the
 //! database's responsibility and are covered by the DB-backed integration
 //! tests under `tests/`.
 
@@ -168,8 +168,8 @@ impl ArtistStore for PgArtistStore {
     }
 }
 
-/// Translate an outgoing FK violation on create/update — i.e. the input
-/// referenced a `tribe_id` that doesn't exist — into a 400 with a helpful
+/// Translate an outgoing FK violation on create/update - i.e. the input
+/// referenced a `tribe_id` that doesn't exist - into a 400 with a helpful
 /// message, rather than letting raw SQLSTATE 23503 bubble up as a 500.
 fn map_tribe_fk_violation(err: sqlx::Error) -> AppError {
     if let sqlx::Error::Database(db_err) = &err {
@@ -273,7 +273,7 @@ impl ArtistStore for InMemoryArtistStore {
 #[cfg(test)]
 mod tests {
     //! Store-contract unit tests. They exercise the [`ArtistStore`] contract
-    //! against [`InMemoryArtistStore`] with no database — the unit/component
+    //! against [`InMemoryArtistStore`] with no database - the unit/component
     //! layer beneath the DB-backed integration tests in `tests/artists.rs`.
 
     use super::*;

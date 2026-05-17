@@ -14,7 +14,7 @@ use crate::auth::Role;
 /// API response - clients only ever see the safe fields. The matching
 /// `#[schema(write_only)]` flag advertises the same constraint in the
 /// OpenAPI doc.
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct User {
     pub id: Uuid,
     /// Login email. Stored as PostgreSQL `CITEXT` so case differences don't
@@ -124,4 +124,66 @@ fn validate_password(password: &str) -> Result<(), String> {
         return Err("password must be at least 8 characters".into());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    //! Pure-logic unit tests for the email/password validators - no DB.
+
+    use super::{LoginInput, RegisterInput, UserUpdate};
+
+    #[test]
+    fn register_accepts_valid_email_and_password() {
+        let r = RegisterInput {
+            email: "alice@example.com".into(),
+            password: "correct-horse".into(),
+        };
+        assert!(r.validate().is_ok());
+    }
+
+    #[test]
+    fn register_rejects_bad_email_shape() {
+        let r = RegisterInput {
+            email: "not-an-email".into(),
+            password: "correct-horse".into(),
+        };
+        assert!(r.validate().is_err());
+    }
+
+    #[test]
+    fn register_rejects_short_password() {
+        let r = RegisterInput {
+            email: "alice@example.com".into(),
+            password: "short".into(),
+        };
+        assert!(r.validate().is_err());
+    }
+
+    #[test]
+    fn login_rejects_empty_fields() {
+        let l = LoginInput {
+            email: "  ".into(),
+            password: String::new(),
+        };
+        assert!(l.validate().is_err());
+    }
+
+    #[test]
+    fn user_update_only_validates_provided_fields() {
+        // Nothing provided: valid (a no-op patch).
+        let empty = UserUpdate {
+            email: None,
+            password: None,
+            role: None,
+        };
+        assert!(empty.validate().is_ok());
+
+        // Bad password provided: rejected.
+        let bad = UserUpdate {
+            email: None,
+            password: Some("x".into()),
+            role: None,
+        };
+        assert!(bad.validate().is_err());
+    }
 }

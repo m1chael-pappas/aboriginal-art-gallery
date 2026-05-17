@@ -10,7 +10,10 @@ use tower::ServiceExt;
 
 use std::sync::Arc;
 
-use gallery_api::{artists::PgArtistStore, auth::JwtSecret, build_router, state::AppState};
+use gallery_api::{
+    artifacts::PgArtifactStore, artists::PgArtistStore, auth::JwtSecret, build_router,
+    state::AppState, tribes::PgTribeStore, users::PgUserStore,
+};
 
 /// 32+ bytes - the only constraint JwtSecret::from_env enforces. The exact
 /// value is irrelevant: each test gets a fresh DB, and tokens never outlive
@@ -23,6 +26,11 @@ pub struct TestClient {
     token: Option<String>,
 }
 
+// `common` is compiled once per integration-test binary. A helper used by
+// some test files but not the one currently being built reads as dead code
+// in that binary, even though it is used elsewhere. Silence that per-crate
+// false positive rather than littering each call site.
+#[allow(dead_code)]
 impl TestClient {
     pub fn new(pool: PgPool) -> Self {
         let jwt_secret = JwtSecret::from_bytes(TEST_JWT_SECRET);
@@ -30,6 +38,9 @@ impl TestClient {
             pool: pool.clone(),
             jwt_secret,
             artists: Arc::new(PgArtistStore::new(pool.clone())),
+            artifacts: Arc::new(PgArtifactStore::new(pool.clone())),
+            tribes: Arc::new(PgTribeStore::new(pool.clone())),
+            users: Arc::new(PgUserStore::new(pool.clone())),
         });
         Self {
             app,

@@ -5,8 +5,11 @@ use std::sync::Arc;
 use axum::extract::FromRef;
 use sqlx::PgPool;
 
+use crate::artifacts::ArtifactStore;
 use crate::artists::ArtistStore;
 use crate::auth::JwtSecret;
+use crate::tribes::TribeStore;
+use crate::users::UserStore;
 
 /// Application state cloned into each request's extractor context.
 ///
@@ -25,6 +28,14 @@ pub struct AppState {
     /// wire an in-memory fake. (Reference pattern; the other contexts still
     /// call their concrete repos directly.)
     pub artists: Arc<dyn ArtistStore>,
+    /// Artifacts persistence behind the [`ArtifactStore`] trait.
+    pub artifacts: Arc<dyn ArtifactStore>,
+    /// Tribes persistence (CRUD + territory + spatial search) behind the
+    /// [`TribeStore`] trait.
+    pub tribes: Arc<dyn TribeStore>,
+    /// Users persistence behind the [`UserStore`] trait. Password hashing
+    /// and JWT issuance stay in the handler, not the store.
+    pub users: Arc<dyn UserStore>,
 }
 
 /// Lets axum's [`FromRequestParts`](axum::extract::FromRequestParts)

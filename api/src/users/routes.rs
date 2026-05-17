@@ -3,6 +3,10 @@
 //! `/auth/register` and `/auth/login` are public. Everything else requires a
 //! valid bearer token, and the `/users` endpoints additionally require the
 //! Admin role (the GET-by-id and PUT-by-id endpoints relax this for "self").
+//!
+//! Persistence goes through the [`UserStore`](super::store::UserStore) trait
+//! object in [`AppState`]; password hashing and JWT issuance stay here in the
+//! handler.
 
 use axum::{
     Json, Router,
@@ -12,10 +16,7 @@ use axum::{
 };
 use uuid::Uuid;
 
-use super::{
-    model::{AuthResponse, LoginInput, RegisterInput, User, UserUpdate},
-    repo,
-};
+use super::model::{AuthResponse, LoginInput, RegisterInput, User, UserUpdate};
 use crate::{
     auth::{AdminUser, AuthUser, Claims, Role, password},
     error::{AppError, AppResult},
@@ -58,7 +59,10 @@ pub(crate) async fn register(
     let email = input.email.trim();
     let password_hash = password::hash_password(&input.password)?;
 
-    let user = repo::create(&state.pool, email, &password_hash, Role::User.as_str()).await?;
+    let user = state
+        .users
+        .create(email, &password_hash, Role::User.as_str())
+        .await?;
     let token = issue_token(&state, &user)?;
 
     Ok((StatusCode::CREATED, Json(AuthResponse { token, user })))
@@ -89,7 +93,7 @@ pub(crate) async fn login(
 ) -> AppResult<Json<AuthResponse>> {
     input.validate().map_err(AppError::Validation)?;
 
-    let user = match repo::find_by_email(&state.pool, input.email.trim()).await? {
+    let user = match state.users.find_by_email(input.email.trim()).await? {
         Some(u) => u,
         None => return Err(AppError::Unauthorized("invalid credentials".into())),
     };
@@ -114,7 +118,7 @@ pub(crate) async fn login(
     ),
 )]
 pub(crate) async fn me(State(state): State<AppState>, auth: AuthUser) -> AppResult<Json<User>> {
-    let user = repo::find(&state.pool, auth.claims.sub).await?;
+    let user = state.users.find(auth.claims.sub).await?;
     Ok(Json(user))
 }
 
@@ -134,7 +138,7 @@ pub(crate) async fn list_users(
     State(state): State<AppState>,
     _: AdminUser,
 ) -> AppResult<Json<Vec<User>>> {
-    let users = repo::list(&state.pool).await?;
+    let users = state.users.list().await?;
     Ok(Json(users))
 }
 
@@ -159,7 +163,7 @@ pub(crate) async fn get_user(
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<User>> {
     require_self_or_admin(&auth.claims, id)?;
-    let user = repo::find(&state.pool, id).await?;
+    let user = state.users.find(id).await?;
     Ok(Json(user))
 }
 
@@ -202,14 +206,10 @@ pub(crate) async fn update_user(
         None => None,
     };
 
-    let updated = repo::update(
-        &state.pool,
-        id,
-        new_email,
-        new_hash.as_deref(),
-        new_role_str,
-    )
-    .await?;
+    let updated = state
+        .users
+        .update(id, new_email, new_hash.as_deref(), new_role_str)
+        .await?;
 
     Ok(Json(updated))
 }
@@ -242,7 +242,7 @@ pub(crate) async fn delete_user(
             "admins cannot delete their own account".into(),
         ));
     }
-    repo::delete(&state.pool, id).await?;
+    state.users.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

@@ -3,6 +3,9 @@
 //!
 //! Reads (including `/tribes/near`) are public; writes - both the regular
 //! CRUD and the territory mutation endpoints - require an Admin-role JWT.
+//!
+//! Handlers talk to the [`TribeStore`](super::store::TribeStore) trait
+//! object in [`AppState`], never a concrete database type.
 
 use axum::{
     Json, Router,
@@ -15,10 +18,7 @@ use serde_json::Value;
 use utoipa::IntoParams;
 use uuid::Uuid;
 
-use super::{
-    model::{Tribe, TribeInput},
-    repo,
-};
+use super::model::{Tribe, TribeInput};
 use crate::{
     auth::AdminUser,
     error::{AppError, AppResult},
@@ -55,7 +55,7 @@ pub fn router() -> Router<AppState> {
     ),
 )]
 pub(crate) async fn list_tribes(State(state): State<AppState>) -> AppResult<Json<Vec<Tribe>>> {
-    let tribes = repo::list(&state.pool).await?;
+    let tribes = state.tribes.list().await?;
     Ok(Json(tribes))
 }
 
@@ -74,7 +74,7 @@ pub(crate) async fn get_tribe(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<Tribe>> {
-    let tribe = repo::find(&state.pool, id).await?;
+    let tribe = state.tribes.find(id).await?;
     Ok(Json(tribe))
 }
 
@@ -99,7 +99,7 @@ pub(crate) async fn create_tribe(
     Json(input): Json<TribeInput>,
 ) -> AppResult<(StatusCode, Json<Tribe>)> {
     input.validate().map_err(AppError::Validation)?;
-    let tribe = repo::create(&state.pool, input).await?;
+    let tribe = state.tribes.create(input).await?;
     Ok((StatusCode::CREATED, Json(tribe)))
 }
 
@@ -128,7 +128,7 @@ pub(crate) async fn update_tribe(
     Json(input): Json<TribeInput>,
 ) -> AppResult<Json<Tribe>> {
     input.validate().map_err(AppError::Validation)?;
-    let tribe = repo::update(&state.pool, id, input).await?;
+    let tribe = state.tribes.update(id, input).await?;
     Ok(Json(tribe))
 }
 
@@ -152,7 +152,7 @@ pub(crate) async fn delete_tribe(
     _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    repo::delete(&state.pool, id).await?;
+    state.tribes.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -190,7 +190,7 @@ pub(crate) async fn set_territory(
     Path(id): Path<Uuid>,
     Json(geometry): Json<Value>,
 ) -> AppResult<Json<Tribe>> {
-    let tribe = repo::set_territory(&state.pool, id, Some(&geometry)).await?;
+    let tribe = state.tribes.set_territory(id, Some(&geometry)).await?;
     Ok(Json(tribe))
 }
 
@@ -214,7 +214,7 @@ pub(crate) async fn clear_territory(
     _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    repo::set_territory(&state.pool, id, None).await?;
+    state.tribes.set_territory(id, None).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -260,6 +260,6 @@ pub(crate) async fn search_near(
         return Err(AppError::Validation("km must be positive".into()));
     }
 
-    let tribes = repo::search_near(&state.pool, q.lng, q.lat, km * 1000.0).await?;
+    let tribes = state.tribes.search_near(q.lng, q.lat, km * 1000.0).await?;
     Ok(Json(tribes))
 }

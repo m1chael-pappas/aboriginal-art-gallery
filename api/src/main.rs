@@ -7,7 +7,10 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use gallery_api::{artists::PgArtistStore, auth::JwtSecret, build_router, state::AppState};
+use gallery_api::{
+    artifacts::PgArtifactStore, artists::PgArtistStore, auth::JwtSecret, build_router,
+    state::AppState, tribes::PgTribeStore, users::PgUserStore,
+};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
@@ -34,6 +37,9 @@ async fn main() -> anyhow::Result<()> {
     let jwt_secret = JwtSecret::from_env()?;
 
     let artists = Arc::new(PgArtistStore::new(pool.clone()));
+    let artifacts = Arc::new(PgArtifactStore::new(pool.clone()));
+    let tribes = Arc::new(PgTribeStore::new(pool.clone()));
+    let users = Arc::new(PgUserStore::new(pool.clone()));
 
     let cors = CorsLayer::permissive();
 
@@ -41,6 +47,9 @@ async fn main() -> anyhow::Result<()> {
         pool,
         jwt_secret,
         artists,
+        artifacts,
+        tribes,
+        users,
     })
     .layer(cors);
 

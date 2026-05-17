@@ -1,5 +1,8 @@
 //! HTTP handlers for the Artifacts BC. Reads are public; writes require an
 //! Admin-role JWT.
+//!
+//! Handlers talk to the [`ArtifactStore`](super::store::ArtifactStore) trait
+//! object in [`AppState`], never a concrete database type.
 
 use axum::{
     Json, Router,
@@ -9,10 +12,7 @@ use axum::{
 };
 use uuid::Uuid;
 
-use super::{
-    model::{Artifact, ArtifactInput},
-    repo,
-};
+use super::model::{Artifact, ArtifactInput};
 use crate::{
     auth::AdminUser,
     error::{AppError, AppResult},
@@ -41,7 +41,7 @@ pub fn router() -> Router<AppState> {
     ),
 )]
 pub(crate) async fn list_artifacts(State(state): State<AppState>) -> AppResult<Json<Vec<Artifact>>> {
-    let artifacts = repo::list(&state.pool).await?;
+    let artifacts = state.artifacts.list().await?;
     Ok(Json(artifacts))
 }
 
@@ -60,7 +60,7 @@ pub(crate) async fn get_artifact(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<Artifact>> {
-    let artifact = repo::find(&state.pool, id).await?;
+    let artifact = state.artifacts.find(id).await?;
     Ok(Json(artifact))
 }
 
@@ -84,7 +84,7 @@ pub(crate) async fn create_artifact(
     Json(input): Json<ArtifactInput>,
 ) -> AppResult<(StatusCode, Json<Artifact>)> {
     input.validate().map_err(AppError::Validation)?;
-    let artifact = repo::create(&state.pool, input).await?;
+    let artifact = state.artifacts.create(input).await?;
     Ok((StatusCode::CREATED, Json(artifact)))
 }
 
@@ -111,7 +111,7 @@ pub(crate) async fn update_artifact(
     Json(input): Json<ArtifactInput>,
 ) -> AppResult<Json<Artifact>> {
     input.validate().map_err(AppError::Validation)?;
-    let artifact = repo::update(&state.pool, id, input).await?;
+    let artifact = state.artifacts.update(id, input).await?;
     Ok(Json(artifact))
 }
 
@@ -134,6 +134,6 @@ pub(crate) async fn delete_artifact(
     _: AdminUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    repo::delete(&state.pool, id).await?;
+    state.artifacts.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
