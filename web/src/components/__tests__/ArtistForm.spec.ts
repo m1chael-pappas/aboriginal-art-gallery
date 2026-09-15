@@ -89,7 +89,9 @@ describe('ArtistForm', () => {
     for (const label of labels) {
       const target = label.attributes('for')
       expect(target, `label "${label.text()}" has no for`).toBeTruthy()
-      expect(wrapper.find(`[id="${target}"]`).exists(), `no control for "${label.text()}"`).toBe(true)
+      expect(wrapper.find(`[id="${target}"]`).exists(), `no control for "${label.text()}"`).toBe(
+        true,
+      )
     }
   })
 

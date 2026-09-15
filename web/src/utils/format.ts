@@ -26,3 +26,32 @@ export function blankToNull<T extends string | number>(value: T | '' | null | un
   }
   return value
 }
+
+/**
+ * Display dimensions such as `275 × 632 cm` or `38 × ? × 5 cm`. Depth is
+ * shown only when known, unknown height or width become `?`, and `null`
+ * means there is nothing to show.
+ */
+export function dimensionsLabel(
+  height?: number | null,
+  width?: number | null,
+  depth?: number | null,
+): string | null {
+  if (height == null && width == null && depth == null) return null
+  const parts: Array<number | null | undefined> = [height, width]
+  if (depth != null) parts.push(depth)
+  return `${parts.map((d) => d ?? '?').join(' × ')} cm`
+}
+
+/** Header breadcrumb for a route name, e.g. `artists.edit` becomes `[ aboriginal_art / artists / edit ]`. */
+export function breadcrumbFor(routeName: string | symbol | null | undefined): string {
+  const raw = routeName == null || routeName === 'home' ? 'index' : String(routeName)
+  return `[ aboriginal_art / ${raw.replaceAll('.', ' / ')} ]`
+}
+
+/** Confirmation text before deleting a tribe, warning how many artists still reference it. */
+export function deleteTribePrompt(tribeName: string, memberCount: number): string {
+  if (memberCount <= 0) return `Delete "${tribeName}"?`
+  const references = memberCount === 1 ? 'artist references' : 'artists reference'
+  return `Delete "${tribeName}"?\n\n${memberCount} ${references} this tribe.`
+}

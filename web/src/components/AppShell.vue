@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { breadcrumbFor } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,11 +20,7 @@ const navItems = computed(() => {
   return items
 })
 
-const breadcrumb = computed(() => {
-  const raw = route.name === 'home' ? 'index' : String(route.name ?? 'index')
-  const slug = raw.replaceAll('.', ' / ')
-  return `[ aboriginal_art / ${slug} ]`
-})
+const breadcrumb = computed(() => breadcrumbFor(route.name))
 
 function onSignOut() {
   auth.logout()

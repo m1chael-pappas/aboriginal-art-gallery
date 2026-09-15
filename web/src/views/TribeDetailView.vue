@@ -7,6 +7,7 @@ import { useArtifactsStore } from '@/stores/artifacts'
 import { useAuthStore } from '@/stores/auth'
 import TerritoryMap from '@/components/TerritoryMap.vue'
 import type { Tribe } from '@/api/types'
+import { deleteTribePrompt } from '@/utils/format'
 
 const props = defineProps<{ id: string }>()
 
@@ -81,10 +82,7 @@ const territoryPretty = computed<string>(() => {
 
 async function onDelete() {
   if (!tribe.value) return
-  const memberCount = membersOfTribe.value.length
-  const references = memberCount === 1 ? 'artist references' : 'artists reference'
-  const extra = memberCount > 0 ? `\n\n${memberCount} ${references} this tribe.` : ''
-  if (!window.confirm(`Delete "${tribe.value.name}"?${extra}`)) {
+  if (!window.confirm(deleteTribePrompt(tribe.value.name, membersOfTribe.value.length))) {
     return
   }
   deleting.value = true

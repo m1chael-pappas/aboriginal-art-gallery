@@ -5,6 +5,7 @@ import { useArtifactsStore } from '@/stores/artifacts'
 import { useArtistsStore } from '@/stores/artists'
 import { useAuthStore } from '@/stores/auth'
 import type { Artifact } from '@/api/types'
+import { dimensionsLabel } from '@/utils/format'
 
 const props = defineProps<{ id: string }>()
 
@@ -37,14 +38,11 @@ const artist = computed(() => {
   return artists.items.find((a) => a.id === artifact.value!.artist_id) ?? null
 })
 
-const dimensions = computed(() => {
-  if (!artifact.value) return null
-  const { height_cm, width_cm, depth_cm } = artifact.value
-  if (height_cm == null && width_cm == null && depth_cm == null) return null
-  const parts = [height_cm, width_cm]
-  if (depth_cm != null) parts.push(depth_cm)
-  return `${parts.map((d) => d ?? '?').join(' × ')} cm`
-})
+const dimensions = computed(() =>
+  artifact.value
+    ? dimensionsLabel(artifact.value.height_cm, artifact.value.width_cm, artifact.value.depth_cm)
+    : null,
+)
 
 async function onDelete() {
   if (!artifact.value) return

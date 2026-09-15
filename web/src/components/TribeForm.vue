@@ -23,7 +23,6 @@ const form = reactive<TribeInput>({
   description: props.initial.description ?? null,
 })
 
-
 function onSubmit() {
   emit('submit', {
     name: form.name.trim(),
