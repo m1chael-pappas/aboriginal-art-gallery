@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Creates or updates the Datadog monitors and dashboard in monitoring/datadog/.
+# Creates or updates the Datadog monitors, metric configuration and dashboard
+# in monitoring/datadog/.
 # Monitors are matched by exact name among those tagged
 # managed-by:gallery-pipeline, and the dashboard by title, so re-running
 # updates in place instead of duplicating. Prints the dashboard URL on stdout.
@@ -27,6 +28,16 @@ for file in "$CONFIG_DIR"/monitors/*.json; do
   else
     id="$(dd POST /api/v1/monitor --data-binary "$definition" | jq -r .id)"
     log "created monitor ${id}: ${name}"
+  fi
+done
+
+for file in "$CONFIG_DIR"/metrics/*.json; do
+  metric="$(jq -r .data.id "$file")"
+  if DD_QUIET=1 dd POST "/api/v2/metrics/${metric}/tags" --data-binary @"$file" >/dev/null; then
+    log "configured metric ${metric}"
+  else
+    dd PATCH "/api/v2/metrics/${metric}/tags" --data-binary @"$file" >/dev/null
+    log "updated metric ${metric}"
   fi
 done
 

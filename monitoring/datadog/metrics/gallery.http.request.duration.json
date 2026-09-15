@@ -1,0 +1,11 @@
+{
+  "data": {
+    "type": "manage_tags",
+    "id": "gallery.http.request.duration",
+    "attributes": {
+      "metric_type": "distribution",
+      "include_percentiles": true,
+      "tags": ["env", "method", "service", "status"]
+    }
+  }
+}

@@ -30,6 +30,10 @@ flowchart LR
 The checks are baked into the agent image from `datadog/conf.d/`.
 Autodiscovery labels on the API container would stop reporting when the container stops, which turns an outage into "no data" instead of a failing check.
 
+Datadog computes p95 for a distribution only after percentile aggregations are enabled for that metric, which `datadog/metrics/` does, and only for data received afterwards.
+We have not confirmed that the free plan keeps percentile aggregations once the trial ends. If it does not, the p95 line stays empty.
+The same panel plots `/health` probe latency from `http_check`, which the free plan always includes.
+
 The OpenMetrics check drops the `endpoint` label and keeps only `method` and `status`.
 That keeps the custom metric count around ten series.
 The API also collapses requests to unknown routes into `endpoint="unmatched"`, so a scanner cannot grow the label set.
@@ -52,6 +56,7 @@ The "API is down" monitor also alerts on missing data after 2 minutes, which cov
 | `datadog/Dockerfile` | Agent image with the checks built in, tagged with the release version |
 | `datadog/conf.d/` | `http_check` and `openmetrics` configuration |
 | `datadog/monitors/*.json` | Monitor definitions in Datadog API format, `__ALERT_EMAIL__` is substituted at apply time |
+| `datadog/metrics/*.json` | Metric tag configuration: queryable tags and percentile aggregations for the latency distribution |
 | `datadog/dashboard.json` | Production dashboard: probe status, monitor summary, request rate, 5xx rate, p95 latency |
 
 Apply by hand with `scripts/datadog-apply.sh` after exporting `DD_API_KEY`, `DD_APP_KEY`, `DD_SITE` and `ALERT_EMAIL`.

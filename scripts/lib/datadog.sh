@@ -21,7 +21,8 @@ dd_app_url() {
 }
 
 # dd <METHOD> <path> [curl args...]: authenticated call, prints the JSON body,
-# fails with the response body on any non-2xx status.
+# fails with the response body on any non-2xx status. DD_QUIET=1 skips the
+# error log for calls where a failure is an expected branch.
 dd() {
   local method="$1" path="$2" body status
   shift 2
@@ -33,7 +34,7 @@ dd() {
     -H 'Content-Type: application/json' \
     "$@")"
   if [[ "$status" != 2* ]]; then
-    log "Datadog ${method} ${path} returned HTTP ${status}: $(cat "$body")"
+    [[ -n "${DD_QUIET:-}" ]] || log "Datadog ${method} ${path} returned HTTP ${status}: $(cat "$body")"
     rm -f "$body"
     return 1
   fi
