@@ -18,7 +18,7 @@ readable.
 | Layer | Choice | Notable for the brief |
 |---|---|---|
 | Web API | **Rust + Axum 0.8** | Non-ASP.NET stack |
-| Data access | **sqlx 0.8** - compile-time-checked SQL | Not an ORM; queries verified against a live DB at build time |
+| Data access | **sqlx 0.8** - compile-time-checked SQL | Not an ORM; queries verified against the schema at build time (live DB or the committed `.sqlx/` cache) |
 | Database | **PostgreSQL 16 + PostGIS 3.4** | CITEXT, GiST, functional index, CHECKs, triggers, spatial queries |
 | Auth | **Argon2id + HS256 JWT**, typed role extractors | Auth approach not covered by the unit |
 | Frontend | **Vue 3 + Vite + Pinia + Tailwind v4** | Added front-end |
@@ -43,8 +43,9 @@ Node + `pnpm` (or `npm`).
 # 1. Start Postgres + PostGIS
 docker compose up -d db
 
-# 2. Apply migrations. sqlx checks queries against a live DB at COMPILE time,
-#    so the schema must exist before `cargo build`/`cargo run`.
+# 2. Apply migrations. sqlx checks queries at compile time against DATABASE_URL.
+#    Builds without a database use the committed .sqlx/ cache: SQLX_OFFLINE=true.
+#    After changing a query, refresh the cache: cargo sqlx prepare -- --all-targets
 cd api
 sqlx migrate run
 
@@ -71,6 +72,8 @@ pnpm run dev                  # http://localhost:5173
 ```bash
 cd api && cargo test                 # full integration suite (ephemeral DBs)
 cd api && cargo test --test auth      # one file (auth | territory | …)
+cd api && cargo ci-test               # nextest + coverage, JUnit and lcov like CI
+cd web && pnpm test                   # vitest in watch mode
 cd api && cargo doc --no-deps         # rustdoc site -> target/doc/gallery_api/
 docker compose down -v                # wipe the DB volume (fresh start)
 ```
@@ -79,16 +82,98 @@ docker compose down -v                # wipe the DB volume (fresh start)
 
 ```
 api/                Rust backend (Axum + sqlx)
-  src/<context>/    model.rs · repo.rs · routes.rs · mod.rs  (one shape per BC)
+  src/<context>/    model.rs · store.rs · routes.rs · mod.rs  (one shape per BC)
   src/auth/         JWT, Argon2id, AuthUser/AdminUser extractors
   src/error.rs      single AppError -> HTTP funnel
   src/openapi.rs    OpenAPI document assembly
   migrations/       forward-only SQL migrations
   tests/            HTTP-level integration tests
+  .sqlx/            offline query cache for SQLX_OFFLINE builds
+  Dockerfile        cargo-chef build, distroless runtime
 web/                Vue 3 SPA (views, Pinia stores, generated API types)
+  Dockerfile        pnpm build served by unprivileged nginx
 docs/               BRD, ERD, architecture, ADCs, original brief
+jenkins/            Jenkins image, plugins and configuration as code
+monitoring/         Datadog agent checks, monitors and dashboard
+scripts/            pipeline scripts and jenkins-setup.md
+security/           scanner findings and accepted-risk allowlist
+Jenkinsfile         the delivery pipeline
+compose.*.yml       staging and production stacks
 docker-compose.yml  Postgres + PostGIS for local dev
+docker-compose.jenkins.yml  Jenkins + SonarQube toolchain
 ```
+
+## Pipeline
+
+Every push to `main` runs a declarative Jenkins pipeline that builds, tests, analyses and scans the code, deploys it to staging, promotes it to production after an approval, and verifies production monitoring with a simulated outage.
+Everything runs locally in Docker, and the only external services are GitHub and the Datadog free plan.
+
+```mermaid
+flowchart TB
+  push([push to main]) --> checkout["<b>Checkout</b><br/>VERSION = short sha<br/>BUILD_TAG = build-sha"]
+  checkout --> build["<b>Build</b><br/>cargo build --release · pnpm build<br/>docker build api, web, agent"]
+  build --> test["<b>Test</b><br/>PostGIS sidecar + sqlx migrate<br/>nextest + llvm-cov · vitest + coverage"]
+  test --> quality["<b>Code Quality</b><br/>cargo fmt · clippy -D warnings<br/>SonarQube scan"]
+  quality --> gate{Quality gate OK?}
+  gate -- yes --> security["<b>Security</b><br/>cargo audit · cargo deny · pnpm audit<br/>Trivy images + IaC"]
+  security --> deploy["<b>Deploy</b><br/>staging stack :8081 / :8091<br/>smoke test"]
+  deploy --> approve{Promote to production?}
+  approve -- Promote --> release["<b>Release</b><br/>prod stack :8082 / :8092<br/>tag v0.N.0 · restore on failure"]
+  release --> monitoring["<b>Monitoring</b><br/>apply Datadog monitors + dashboard<br/>verify agent data · simulate outage"]
+  monitoring --> done([released and monitored])
+  gate -- no --> fail([pipeline fails])
+  test -. test failure .-> fail
+  security -. HIGH or CRITICAL .-> fail
+  deploy -. smoke failure .-> fail
+  release -. smoke failure, previous release restored .-> fail
+  monitoring -. no alert or no resolve .-> fail
+```
+
+| Stage | Tools | Fails the build when | Output |
+| --- | --- | --- | --- |
+| Build | cargo, pnpm, Docker Pipeline | any compile or type error | `web/dist`, `gallery-api` image tarball, images tagged `BUILD_NUMBER-sha` |
+| Test | cargo-nextest, cargo-llvm-cov, vitest, PostGIS sidecar | any failing test or migration | JUnit results, LCOV coverage in Jenkins |
+| Code Quality | rustfmt, clippy, Warnings NG, SonarQube | formatting diff, any clippy warning, quality gate not OK | clippy report, SonarQube analysis |
+| Security | cargo-audit, cargo-deny, pnpm audit, Trivy | HIGH or CRITICAL finding not in `security/allowlist.md` | JSON reports for every scanner |
+| Deploy | Docker Compose, `scripts/smoke-test.sh` | a health check or any of 10 smoke checks | staging on 8081 and 8091, smoke JUnit |
+| Release | input step, `scripts/release.sh`, git | production smoke test fails (production is restored first) | production on 8082 and 8092, tag `v0.N.0`, release record |
+| Monitoring | Datadog API and agent, `scripts/simulate-incident.sh` | no agent data, or the outage does not alert and resolve | dashboard link, alert and resolve timings |
+
+### Run it from a clean machine
+
+You need Docker with the compose plugin, `curl`, `jq`, `openssl` and `ssh-keygen`.
+On WSL2, give the VM at least 16 GB (24 GB recommended).
+
+```bash
+git clone https://github.com/m1chael-pappas/aboriginal-art-gallery.git
+cd aboriginal-art-gallery
+scripts/ci-up.sh
+```
+
+The script generates every secret, starts SonarQube and configures its quality gate, token and webhook, then starts Jenkins with its plugins, credentials and pipeline job already configured.
+It finishes by printing the Jenkins and SonarQube URLs and a GitHub deploy key.
+
+Then:
+
+1. Add the printed key to the GitHub repository as a deploy key with write access.
+2. Put `DD_SITE`, `DD_API_KEY`, `DD_APP_KEY` and `ALERT_EMAIL` into `.env.jenkins`.
+3. Run `scripts/ci-up.sh` again.
+4. Open <http://localhost:8090>, sign in as `admin` with `JENKINS_ADMIN_PASSWORD` from `.env.jenkins`, and click Build Now.
+5. Approve "Promote to production?" when the Release stage asks.
+
+`scripts/jenkins-setup.md` has the full plugin and credential list, the manual SonarQube configuration, the quality gate, and troubleshooting.
+`monitoring/README.md` explains the alert rules and `security/allowlist.md` records every scanner finding.
+
+### After a release
+
+| URL | What |
+| --- | --- |
+| <http://localhost:8091> | Staging web, API on <http://localhost:8081> |
+| <http://localhost:8092> | Production web, API on <http://localhost:8082> |
+| <http://localhost:8090> | Jenkins |
+| <http://localhost:9000> | SonarQube |
+
+Roll production back with `scripts/rollback.sh`, and run it again to return to the newer release.
 
 ## Documentation
 
