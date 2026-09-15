@@ -49,7 +49,7 @@ if ! deploy_stack prod "$ENV_FILE" "$RELEASE" --if-empty; then
 fi
 
 if ! SMOKE_SUITE=smoke.production "$REPO_ROOT/scripts/smoke-test.sh" \
-  "$PROD_WEB_URL" "$PROD_API_URL" "$ENV_FILE" "$REPO_ROOT/reports/smoke-production.xml"; then
+  "$PROD_WEB_URL" "$PROD_API_URL" "$ENV_FILE" "$REPO_ROOT/reports/junit/smoke-production.xml"; then
   restore_previous
   die "production smoke test failed for ${RELEASE}; production is back on ${previous:-nothing}"
 fi
