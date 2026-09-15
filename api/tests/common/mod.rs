@@ -1,6 +1,6 @@
 use axum::{
     Router,
-    body::Body,
+    body::{Body, Bytes},
     http::{Request, StatusCode, header},
 };
 use http_body_util::BodyExt;
@@ -155,7 +155,41 @@ impl TestClient {
             None => Body::empty(),
         };
         let request = builder.body(request_body).expect("build request");
+        let (status, bytes) = self.dispatch(request).await;
 
+        let json = if bytes.is_empty() {
+            Value::Null
+        } else {
+            serde_json::from_slice(&bytes).unwrap_or(Value::Null)
+        };
+
+        (status, json)
+    }
+
+    /// `GET` for non-JSON endpoints such as `/metrics`, returning the body
+    /// as text.
+    pub async fn get_text(&self, uri: &str) -> (StatusCode, String) {
+        let request = Request::builder()
+            .method("GET")
+            .uri(uri)
+            .body(Body::empty())
+            .expect("build request");
+        let (status, bytes) = self.dispatch(request).await;
+        (
+            status,
+            String::from_utf8(bytes.to_vec()).expect("utf-8 response body"),
+        )
+    }
+
+    /// Wraps the router under test, for example with
+    /// `gallery_api::with_metrics`, which `main` applies outside
+    /// `build_router`.
+    pub fn map_app(mut self, wrap: impl FnOnce(Router) -> Router) -> Self {
+        self.app = wrap(self.app);
+        self
+    }
+
+    async fn dispatch(&self, request: Request<Body>) -> (StatusCode, Bytes) {
         // Router::oneshot consumes self; cloning is cheap (Arc inside).
         let response = self
             .app
@@ -171,13 +205,6 @@ impl TestClient {
             .await
             .expect("collect response body")
             .to_bytes();
-
-        let json = if bytes.is_empty() {
-            Value::Null
-        } else {
-            serde_json::from_slice(&bytes).unwrap_or(Value::Null)
-        };
-
-        (status, json)
+        (status, bytes)
     }
 }

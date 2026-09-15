@@ -1,6 +1,6 @@
 //! Aboriginal Art Gallery API - library crate.
 //!
-//! The binary in `bin/main.rs` wires environment + tracing, then hands a
+//! The binary in `main.rs` wires environment + tracing, then hands a
 //! configured [`AppState`] to [`build_router`]. Everything else (handlers,
 //! repos, models, the OpenAPI surface) lives in the submodules below.
 //!
@@ -10,7 +10,11 @@
 //! - [`tribes`] - peoples, language groups, PostGIS territory polygons
 //! - [`users`] + [`auth`] - registration, login, JWT, role-based authorisation
 
-use axum::Router;
+use std::net::SocketAddr;
+
+use anyhow::Context;
+use axum::{Router, routing::get};
+use axum_prometheus::PrometheusMetricLayerBuilder;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -42,4 +46,39 @@ pub fn build_router(state: AppState) -> Router {
         .merge(users::router())
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .with_state(state)
+}
+
+/// Default listen address when `BIND_ADDR` is unset. Loopback, so a dev
+/// `cargo run` is not exposed on the LAN; containers set `0.0.0.0:8080`.
+pub const DEFAULT_BIND_ADDR: &str = "127.0.0.1:8080";
+
+/// Resolves the listen address from `BIND_ADDR`, falling back to
+/// [`DEFAULT_BIND_ADDR`]. Shared by the server and the `healthcheck` binary
+/// so both always agree on the port.
+pub fn bind_addr() -> anyhow::Result<SocketAddr> {
+    let raw = std::env::var("BIND_ADDR").unwrap_or_else(|_| DEFAULT_BIND_ADDR.to_string());
+    raw.parse()
+        .with_context(|| format!("BIND_ADDR `{raw}` is not a valid socket address"))
+}
+
+/// Wraps `router` in Prometheus HTTP metrics and mounts the `/metrics`
+/// scrape endpoint.
+///
+/// Emits `axum_http_requests_total`, `axum_http_requests_duration_seconds`
+/// and `axum_http_requests_pending`, labelled by matched route, method and
+/// status. `/metrics` and `/health` are excluded so scrapes and probes do not
+/// inflate request rate or skew latency.
+///
+/// Installs the process-wide `metrics` recorder, which can only happen once
+/// per process. Call it from `main`, never from [`build_router`], because
+/// the integration tests build a router per test.
+pub fn with_metrics(router: Router) -> Router {
+    let (layer, handle) = PrometheusMetricLayerBuilder::new()
+        .with_ignore_patterns(&["/metrics", "/health"])
+        .with_default_metrics()
+        .build_pair();
+
+    router
+        .route("/metrics", get(move || async move { handle.render() }))
+        .layer(layer)
 }
