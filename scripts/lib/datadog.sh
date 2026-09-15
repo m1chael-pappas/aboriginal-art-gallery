@@ -5,15 +5,18 @@
 # (US1); set it to datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com or
 # ap1.datadoghq.com for other regions.
 
-DD_SITE="${DD_SITE:-datadoghq.com}"
-DD_API_URL="https://api.${DD_SITE}"
 MANAGED_TAG="managed-by:gallery-pipeline"
 
-# dd_app_url: base URL of the Datadog web app for DD_SITE.
+# dd_site: DD_SITE, read at call time so scripts can load it after sourcing.
+dd_site() {
+  printf '%s' "${DD_SITE:-datadoghq.com}"
+}
+
+# dd_app_url: base URL of the Datadog web app for the site.
 dd_app_url() {
-  case "$DD_SITE" in
-    datadoghq.com | datadoghq.eu) printf 'https://app.%s' "$DD_SITE" ;;
-    *) printf 'https://%s' "$DD_SITE" ;;
+  case "$(dd_site)" in
+    datadoghq.com | datadoghq.eu) printf 'https://app.%s' "$(dd_site)" ;;
+    *) printf 'https://%s' "$(dd_site)" ;;
   esac
 }
 
@@ -24,7 +27,7 @@ dd() {
   shift 2
   : "${DD_API_KEY:?DD_API_KEY is not set}" "${DD_APP_KEY:?DD_APP_KEY is not set}"
   body="$(mktemp)"
-  status="$(curl -sS -o "$body" -w '%{http_code}' -X "$method" "${DD_API_URL}${path}" \
+  status="$(curl -sS -o "$body" -w '%{http_code}' -X "$method" "https://api.$(dd_site)${path}" \
     -H "DD-API-KEY: ${DD_API_KEY}" \
     -H "DD-APPLICATION-KEY: ${DD_APP_KEY}" \
     -H 'Content-Type: application/json' \

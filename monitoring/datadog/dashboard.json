@@ -2,7 +2,7 @@
   "title": "Aboriginal Art Gallery - production",
   "description": "Live health of the gallery-prod stack. Managed by the Jenkins Monitoring stage from monitoring/datadog/dashboard.json; edits in the UI are overwritten on the next release.",
   "layout_type": "ordered",
-  "reflow_type": "auto",
+  "reflow_type": "fixed",
   "template_variables": [],
   "widgets": [
     {
