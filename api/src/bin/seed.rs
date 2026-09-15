@@ -129,23 +129,43 @@ async fn seed_tribes(pool: &PgPool) -> anyhow::Result<Vec<Seeded>> {
     Ok(out)
 }
 
+/// One curated artist: display name, birth year, death year, region,
+/// biography and the name of the tribe to link.
+type ArtistSeed = (
+    &'static str,
+    Option<i16>,
+    Option<i16>,
+    Option<&'static str>,
+    Option<&'static str>,
+    Option<&'static str>,
+);
+
+/// One curated artifact: title, artist name, art type, art style, medium,
+/// year created, height cm, width cm and description.
+type ArtifactSeed = (
+    &'static str,
+    &'static str,
+    Option<&'static str>,
+    Option<&'static str>,
+    Option<&'static str>,
+    Option<i16>,
+    Option<i16>,
+    Option<i16>,
+    Option<&'static str>,
+);
+
 /// Insert the curated artist list, looking up each artist's tribe by name
 /// from the previously-seeded list.
 async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Seeded>> {
-    let inputs: [(
-        &'static str,
-        Option<i16>,
-        Option<i16>,
-        Option<&str>,
-        Option<&str>,
-        Option<&str>,
-    ); 8] = [
+    let inputs: [ArtistSeed; 8] = [
         (
             "Emily Kame Kngwarreye",
             Some(1910),
             Some(1996),
             Some("Utopia, Northern Territory"),
-            Some("One of Australia's most prominent contemporary Aboriginal artists, known for vibrant, gestural paintings of her Country."),
+            Some(
+                "One of Australia's most prominent contemporary Aboriginal artists, known for vibrant, gestural paintings of her Country.",
+            ),
             Some("Anmatyerre"),
         ),
         (
@@ -153,7 +173,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1902),
             Some(1959),
             Some("Hermannsburg, Northern Territory"),
-            Some("Watercolour painter of Central Australian landscapes; often credited as the first internationally celebrated Aboriginal artist."),
+            Some(
+                "Watercolour painter of Central Australian landscapes; often credited as the first internationally celebrated Aboriginal artist.",
+            ),
             Some("Arrernte"),
         ),
         (
@@ -169,7 +191,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1932),
             Some(2002),
             Some("Napperby Station, Northern Territory"),
-            Some("A founding member of the Western Desert art movement; known for large-scale topographical 'map' paintings."),
+            Some(
+                "A founding member of the Western Desert art movement; known for large-scale topographical 'map' paintings.",
+            ),
             Some("Anmatyerre"),
         ),
         (
@@ -177,7 +201,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1926),
             Some(1998),
             Some("Marnpi, Northern Territory"),
-            Some("Founding member of the Papunya Tula movement; later associated with the Pintupi return-to-Country period."),
+            Some(
+                "Founding member of the Papunya Tula movement; later associated with the Pintupi return-to-Country period.",
+            ),
             Some("Pintupi"),
         ),
         (
@@ -185,7 +211,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1932),
             Some(2021),
             Some("Kintore, Northern Territory"),
-            Some("Senior Pintupi painter; works often depict women's ceremony at sacred sites near her Country."),
+            Some(
+                "Senior Pintupi painter; works often depict women's ceremony at sacred sites near her Country.",
+            ),
             Some("Pintupi"),
         ),
         (
@@ -193,7 +221,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1945),
             Some(2012),
             Some("Gunyangara, Arnhem Land"),
-            Some("Yolngu artist whose paintings of Garak (the universe) gained international recognition."),
+            Some(
+                "Yolngu artist whose paintings of Garak (the universe) gained international recognition.",
+            ),
             Some("Yolngu"),
         ),
         (
@@ -201,7 +231,9 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
             Some(1928),
             Some(2003),
             Some("Milikapiti, Tiwi Islands"),
-            Some("Senior Tiwi artist who worked in painting, printmaking and sculpture, often depicting jilamara designs."),
+            Some(
+                "Senior Tiwi artist who worked in painting, printmaking and sculpture, often depicting jilamara designs.",
+            ),
             Some("Tiwi"),
         ),
     ];
@@ -233,17 +265,7 @@ async fn seed_artists(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<Vec<Se
 /// Insert the curated artifact list, looking up each work's artist by name
 /// from the previously-seeded list.
 async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()> {
-    let inputs: [(
-        &str,
-        &str,
-        Option<&str>,
-        Option<&str>,
-        Option<&str>,
-        Option<i16>,
-        Option<i16>,
-        Option<i16>,
-        Option<&str>,
-    ); 7] = [
+    let inputs: [ArtifactSeed; 7] = [
         (
             "Earth's Creation",
             "Emily Kame Kngwarreye",
@@ -253,7 +275,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(1994),
             Some(275),
             Some(632),
-            Some("A monumental four-panel painting referencing the abundance of her Country during the wet season."),
+            Some(
+                "A monumental four-panel painting referencing the abundance of her Country during the wet season.",
+            ),
         ),
         (
             "Hermannsburg Landscape",
@@ -264,7 +288,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(1950),
             Some(38),
             Some(56),
-            Some("A characteristic Central Australian landscape with white-trunked ghost gums against red ranges."),
+            Some(
+                "A characteristic Central Australian landscape with white-trunked ghost gums against red ranges.",
+            ),
         ),
         (
             "Roads Crossing the Salt Pan",
@@ -275,7 +301,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(1986),
             Some(90),
             Some(180),
-            Some("Recounts country traversed during a Dreaming journey, with broad ochre fields and white dotted lines marking the route."),
+            Some(
+                "Recounts country traversed during a Dreaming journey, with broad ochre fields and white dotted lines marking the route.",
+            ),
         ),
         (
             "Warlugulong",
@@ -286,7 +314,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(1977),
             Some(202),
             Some(338),
-            Some("A topographical narrative depicting the ancestral fire Dreaming and related stories spanning the artist's Country."),
+            Some(
+                "A topographical narrative depicting the ancestral fire Dreaming and related stories spanning the artist's Country.",
+            ),
         ),
         (
             "Marrapinti",
@@ -297,7 +327,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(2002),
             Some(122),
             Some(153),
-            Some("Depicts the rockhole site of Marrapinti, west of Pollock Hills, where ancestral women gathered."),
+            Some(
+                "Depicts the rockhole site of Marrapinti, west of Pollock Hills, where ancestral women gathered.",
+            ),
         ),
         (
             "Garak - The Universe",
@@ -308,7 +340,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(2004),
             Some(155),
             Some(60),
-            Some("A bark painting representing the vastness of Garak - the universe - and the artist's place within it."),
+            Some(
+                "A bark painting representing the vastness of Garak - the universe - and the artist's place within it.",
+            ),
         ),
         (
             "Jilamara",
@@ -319,7 +353,9 @@ async fn seed_artifacts(pool: &PgPool, artists: &[Seeded]) -> anyhow::Result<()>
             Some(2000),
             Some(120),
             Some(90),
-            Some("Tiwi body-painting designs translated to canvas, with bold geometric patterning in ochre, white and black."),
+            Some(
+                "Tiwi body-painting designs translated to canvas, with bold geometric patterning in ochre, white and black.",
+            ),
         ),
     ];
 

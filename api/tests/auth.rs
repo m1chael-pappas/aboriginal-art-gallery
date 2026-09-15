@@ -161,7 +161,7 @@ async fn me_with_garbage_token_returns_401(pool: PgPool) {
 
 #[sqlx::test]
 async fn me_with_valid_token_returns_user(pool: PgPool) {
-    let client = TestClient::new(pool).as_user().await;
+    let client = TestClient::new(pool).with_user().await;
     let (status, body) = client.get("/auth/me").await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["email"], "user@test.local");
@@ -191,7 +191,7 @@ async fn write_to_artists_without_token_returns_401(pool: PgPool) {
 
 #[sqlx::test]
 async fn write_to_artists_as_user_returns_403(pool: PgPool) {
-    let client = TestClient::new(pool).as_user().await;
+    let client = TestClient::new(pool).with_user().await;
     let (status, _) = client
         .post("/artists", json!({ "display_name": "Forbidden" }))
         .await;
@@ -200,7 +200,7 @@ async fn write_to_artists_as_user_returns_403(pool: PgPool) {
 
 #[sqlx::test]
 async fn write_to_artists_as_admin_succeeds(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (status, _) = client
         .post("/artists", json!({ "display_name": "Allowed" }))
         .await;
@@ -233,11 +233,11 @@ async fn write_to_tribes_without_token_returns_401(pool: PgPool) {
 
 #[sqlx::test]
 async fn list_users_requires_admin(pool: PgPool) {
-    let user = TestClient::new(pool.clone()).as_user().await;
+    let user = TestClient::new(pool.clone()).with_user().await;
     let (status, _) = user.get("/users").await;
     assert_eq!(status, StatusCode::FORBIDDEN);
 
-    let admin = TestClient::new(pool).as_admin().await;
+    let admin = TestClient::new(pool).with_admin().await;
     let (status, body) = admin.get("/users").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.is_array());
@@ -245,18 +245,18 @@ async fn list_users_requires_admin(pool: PgPool) {
 
 #[sqlx::test]
 async fn user_can_fetch_self_but_not_others(pool: PgPool) {
-    let admin = TestClient::new(pool.clone()).as_admin().await;
+    let admin = TestClient::new(pool.clone()).with_admin().await;
     // Admin creates a second user via register-as-someone-else: easiest path
     // is to spin up a separate client to register them.
     let other_client = TestClient::new(pool.clone())
-        .as_user_with("other@test.local", "other-pw-12345")
+        .with_user_login("other@test.local", "other-pw-12345")
         .await;
     let (_, other_me) = other_client.get("/auth/me").await;
     let other_id = other_me["id"].as_str().unwrap();
 
     // Now a "normal" user (different email) tries to read `other`.
     let user = TestClient::new(pool)
-        .as_user_with("normal@test.local", "normal-pw-12345")
+        .with_user_login("normal@test.local", "normal-pw-12345")
         .await;
 
     let (_, self_me) = user.get("/auth/me").await;
@@ -275,7 +275,7 @@ async fn user_can_fetch_self_but_not_others(pool: PgPool) {
 
 #[sqlx::test]
 async fn user_cannot_promote_themselves_to_admin(pool: PgPool) {
-    let user = TestClient::new(pool).as_user().await;
+    let user = TestClient::new(pool).with_user().await;
     let (_, me) = user.get("/auth/me").await;
     let id = me["id"].as_str().unwrap();
 
@@ -288,9 +288,9 @@ async fn user_cannot_promote_themselves_to_admin(pool: PgPool) {
 
 #[sqlx::test]
 async fn admin_can_promote_user_to_admin(pool: PgPool) {
-    let admin = TestClient::new(pool.clone()).as_admin().await;
+    let admin = TestClient::new(pool.clone()).with_admin().await;
     let _user_client = TestClient::new(pool.clone())
-        .as_user_with("promote@test.local", "long-enough")
+        .with_user_login("promote@test.local", "long-enough")
         .await;
 
     // Look up the new user's id via admin's user list.
@@ -314,7 +314,7 @@ async fn admin_can_promote_user_to_admin(pool: PgPool) {
 
 #[sqlx::test]
 async fn admin_cannot_delete_themselves(pool: PgPool) {
-    let admin = TestClient::new(pool).as_admin().await;
+    let admin = TestClient::new(pool).with_admin().await;
     let (_, me) = admin.get("/auth/me").await;
     let id = me["id"].as_str().unwrap();
 

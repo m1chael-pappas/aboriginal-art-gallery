@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE tribes\n            SET territory = ST_Multi(ST_GeomFromText($1, 4326))::geography\n            WHERE id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7f146e53bfe47e161edd30a32ca36fedaa07258124d2b94944cbae961f022823"
+}

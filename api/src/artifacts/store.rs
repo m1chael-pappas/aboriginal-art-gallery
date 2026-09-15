@@ -16,14 +16,14 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::model::{Artifact, ArtifactInput};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, FOREIGN_KEY_VIOLATION, on_sqlstate};
 
+#[cfg(test)]
+use chrono::Utc;
 #[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]
 use std::sync::Mutex;
-#[cfg(test)]
-use chrono::Utc;
 
 /// CRUD contract for artifacts. Object-safe via [`async_trait`] so it can be
 /// held as `Arc<dyn ArtifactStore>` in [`crate::state::AppState`].
@@ -170,12 +170,9 @@ impl ArtifactStore for PgArtifactStore {
 /// Translate an FK violation on `artist_id` into a 400 with a clear message,
 /// instead of letting raw SQLSTATE 23503 surface as a generic 500.
 fn map_artist_fk_violation(err: sqlx::Error) -> AppError {
-    if let sqlx::Error::Database(db_err) = &err {
-        if db_err.code().as_deref() == Some("23503") {
-            return AppError::Validation("artist_id: artist not found".into());
-        }
-    }
-    AppError::Database(err)
+    on_sqlstate(FOREIGN_KEY_VIOLATION, || {
+        AppError::Validation("artist_id: artist not found".into())
+    })(err)
 }
 
 /// In-memory [`ArtifactStore`] for unit tests. Mirrors the observable

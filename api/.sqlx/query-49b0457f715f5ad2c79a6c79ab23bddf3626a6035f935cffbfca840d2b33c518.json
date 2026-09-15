@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE artists\n            SET display_name = $2,\n                birth_year   = $3,\n                death_year   = $4,\n                region       = $5,\n                biography    = $6,\n                tribe_id     = $7\n            WHERE id = $1\n            RETURNING id, display_name, birth_year, death_year, region, biography,\n                      tribe_id, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "birth_year",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "death_year",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "region",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "tribe_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int2",
+        "Int2",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "49b0457f715f5ad2c79a6c79ab23bddf3626a6035f935cffbfca840d2b33c518"
+}

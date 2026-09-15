@@ -1,0 +1,104 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE artifacts\n            SET title         = $2,\n                artist_id     = $3,\n                art_type      = $4,\n                art_style     = $5,\n                medium        = $6,\n                year_created  = $7,\n                height_cm     = $8,\n                width_cm      = $9,\n                depth_cm      = $10,\n                description   = $11\n            WHERE id = $1\n            RETURNING id, title, artist_id, art_type, art_style, medium,\n                      year_created, height_cm, width_cm, depth_cm, description,\n                      created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "artist_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "art_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "art_style",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "medium",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "year_created",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 7,
+        "name": "height_cm",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 8,
+        "name": "width_cm",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 9,
+        "name": "depth_cm",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 10,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int2",
+        "Int2",
+        "Int2",
+        "Int2",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "47fc72cb3cdcc6523a5aee4ff95e0df3d666ba266dbb28838378f5eb370e14d6"
+}

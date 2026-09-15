@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, display_name, birth_year, death_year, region, biography,\n                   tribe_id, created_at, updated_at\n            FROM artists\n            ORDER BY display_name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "birth_year",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "death_year",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "region",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "tribe_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "5eef5e90da7c6e8454e512285e7bd7a57b889c5fcf70e13e02d02cf88b07dbe1"
+}

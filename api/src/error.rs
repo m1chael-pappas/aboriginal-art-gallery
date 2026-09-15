@@ -81,3 +81,24 @@ impl IntoResponse for AppError {
 /// Result alias used throughout the crate so handlers can `?` straight to the
 /// wire format.
 pub type AppResult<T> = Result<T, AppError>;
+
+/// SQLSTATE `23503`, `foreign_key_violation`.
+pub const FOREIGN_KEY_VIOLATION: &str = "23503";
+
+/// SQLSTATE `23505`, `unique_violation`.
+pub const UNIQUE_VIOLATION: &str = "23505";
+
+/// Builds a `map_err` adapter that turns one Postgres SQLSTATE into a domain
+/// error and passes every other failure through as [`AppError::Database`].
+///
+/// Stores use it so a constraint the database enforces surfaces as a 400 or
+/// 409 with a useful message instead of a generic 500.
+pub fn on_sqlstate(
+    code: &'static str,
+    mapped: impl Fn() -> AppError,
+) -> impl Fn(sqlx::Error) -> AppError {
+    move |err| match &err {
+        sqlx::Error::Database(db_err) if db_err.code().as_deref() == Some(code) => mapped(),
+        _ => AppError::Database(err),
+    }
+}

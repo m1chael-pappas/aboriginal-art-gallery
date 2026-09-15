@@ -2,8 +2,8 @@
 //! PostGIS territory polygons.
 
 pub mod model;
-mod store;
 pub(crate) mod routes;
+mod store;
 
 pub use routes::router;
 pub use store::{PgTribeStore, TribeStore};

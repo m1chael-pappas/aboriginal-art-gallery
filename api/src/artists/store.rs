@@ -30,7 +30,7 @@ use std::sync::Mutex;
 use chrono::Utc;
 
 use super::model::{Artist, ArtistInput};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, FOREIGN_KEY_VIOLATION, on_sqlstate};
 
 /// CRUD contract for artists. Object-safe via [`async_trait`], so it can be
 /// held as `Arc<dyn ArtistStore>` in [`crate::state::AppState`] and swapped
@@ -150,16 +150,9 @@ impl ArtistStore for PgArtistStore {
         let result = sqlx::query!("DELETE FROM artists WHERE id = $1", id)
             .execute(&self.pool)
             .await
-            .map_err(|err| {
-                if let sqlx::Error::Database(db_err) = &err {
-                    if db_err.code().as_deref() == Some("23503") {
-                        return AppError::Conflict(
-                            "cannot delete artist while artifacts reference them".into(),
-                        );
-                    }
-                }
-                AppError::Database(err)
-            })?;
+            .map_err(on_sqlstate(FOREIGN_KEY_VIOLATION, || {
+                AppError::Conflict("cannot delete artist while artifacts reference them".into())
+            }))?;
 
         if result.rows_affected() == 0 {
             return Err(AppError::NotFound);
@@ -172,12 +165,9 @@ impl ArtistStore for PgArtistStore {
 /// referenced a `tribe_id` that doesn't exist - into a 400 with a helpful
 /// message, rather than letting raw SQLSTATE 23503 bubble up as a 500.
 fn map_tribe_fk_violation(err: sqlx::Error) -> AppError {
-    if let sqlx::Error::Database(db_err) = &err {
-        if db_err.code().as_deref() == Some("23503") {
-            return AppError::Validation("tribe_id: tribe not found".into());
-        }
-    }
-    AppError::Database(err)
+    on_sqlstate(FOREIGN_KEY_VIOLATION, || {
+        AppError::Validation("tribe_id: tribe not found".into())
+    })(err)
 }
 
 /// In-memory [`ArtistStore`] for unit tests. Mirrors the *observable*
@@ -318,7 +308,10 @@ mod tests {
             .into_iter()
             .map(|a| a.display_name)
             .collect();
-        assert_eq!(names, ["Albert Namatjira", "Clifford Possum", "Rover Thomas"]);
+        assert_eq!(
+            names,
+            ["Albert Namatjira", "Clifford Possum", "Rover Thomas"]
+        );
     }
 
     #[tokio::test]

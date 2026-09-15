@@ -58,10 +58,10 @@ impl ArtifactInput {
             ("width_cm", self.width_cm),
             ("depth_cm", self.depth_cm),
         ] {
-            if let Some(v) = value {
-                if v <= 0 {
-                    return Err(format!("{label} must be positive"));
-                }
+            if let Some(v) = value
+                && v <= 0
+            {
+                return Err(format!("{label} must be positive"));
             }
         }
         Ok(())

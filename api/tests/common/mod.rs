@@ -67,11 +67,12 @@ impl TestClient {
     /// bearer token. Bypasses the bootstrap problem (you can't promote to
     /// admin without an admin token) and gives every mutation test a clean
     /// admin context with one line.
-    pub async fn as_admin(self) -> Self {
-        self.as_admin_with("admin@test.local", "test-admin-pw-123").await
+    pub async fn with_admin(self) -> Self {
+        self.with_admin_login("admin@test.local", "test-admin-pw-123")
+            .await
     }
 
-    pub async fn as_admin_with(mut self, email: &str, password: &str) -> Self {
+    pub async fn with_admin_login(mut self, email: &str, password: &str) -> Self {
         let hash = gallery_api::auth::password::hash_password(password).expect("hash admin pw");
         sqlx::query!(
             "INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)",
@@ -84,20 +85,30 @@ impl TestClient {
         .expect("insert admin user");
 
         let (status, body) = self
-            .send("POST", "/auth/login", Some(json!({ "email": email, "password": password })))
+            .send(
+                "POST",
+                "/auth/login",
+                Some(json!({ "email": email, "password": password })),
+            )
             .await;
         assert_eq!(status, StatusCode::OK, "admin login failed: {body}");
-        self.token = Some(body["token"].as_str().expect("token in response").to_string());
+        self.token = Some(
+            body["token"]
+                .as_str()
+                .expect("token in response")
+                .to_string(),
+        );
         self
     }
 
     /// Logs the client in as a regular `User`-role caller via the public
     /// `/auth/register` endpoint. Exercises the register path as a side effect.
-    pub async fn as_user(self) -> Self {
-        self.as_user_with("user@test.local", "test-user-pw-123").await
+    pub async fn with_user(self) -> Self {
+        self.with_user_login("user@test.local", "test-user-pw-123")
+            .await
     }
 
-    pub async fn as_user_with(mut self, email: &str, password: &str) -> Self {
+    pub async fn with_user_login(mut self, email: &str, password: &str) -> Self {
         let (status, body) = self
             .send(
                 "POST",
@@ -106,7 +117,12 @@ impl TestClient {
             )
             .await;
         assert_eq!(status, StatusCode::CREATED, "user register failed: {body}");
-        self.token = Some(body["token"].as_str().expect("token in response").to_string());
+        self.token = Some(
+            body["token"]
+                .as_str()
+                .expect("token in response")
+                .to_string(),
+        );
         self
     }
 

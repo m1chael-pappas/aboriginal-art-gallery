@@ -40,7 +40,9 @@ pub fn router() -> Router<AppState> {
         (status = 200, description = "All artifacts in the collection", body = Vec<Artifact>),
     ),
 )]
-pub(crate) async fn list_artifacts(State(state): State<AppState>) -> AppResult<Json<Vec<Artifact>>> {
+pub(crate) async fn list_artifacts(
+    State(state): State<AppState>,
+) -> AppResult<Json<Vec<Artifact>>> {
     let artifacts = state.artifacts.list().await?;
     Ok(Json(artifacts))
 }

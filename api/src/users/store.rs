@@ -16,14 +16,14 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::model::User;
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, UNIQUE_VIOLATION, on_sqlstate};
 
+#[cfg(test)]
+use chrono::Utc;
 #[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]
 use std::sync::Mutex;
-#[cfg(test)]
-use chrono::Utc;
 
 /// CRUD + login-lookup contract for users.
 #[async_trait]
@@ -172,12 +172,9 @@ impl UserStore for PgUserStore {
 /// SQLSTATE 23505 = unique_violation. The only UNIQUE constraint on `users`
 /// is `email`, so any 23505 here is a duplicate email - surface as 409.
 fn map_unique_violation(err: sqlx::Error) -> AppError {
-    if let sqlx::Error::Database(db_err) = &err {
-        if db_err.code().as_deref() == Some("23505") {
-            return AppError::Conflict("email already in use".into());
-        }
-    }
-    AppError::Database(err)
+    on_sqlstate(UNIQUE_VIOLATION, || {
+        AppError::Conflict("email already in use".into())
+    })(err)
 }
 
 /// In-memory [`UserStore`] for unit tests. Reproduces case-insensitive email
@@ -267,11 +264,15 @@ impl UserStore for InMemoryUserStore {
         let existing = rows.get(&id).ok_or(AppError::NotFound)?;
         let updated = User {
             id,
-            email: email.map(str::to_string).unwrap_or_else(|| existing.email.clone()),
+            email: email
+                .map(str::to_string)
+                .unwrap_or_else(|| existing.email.clone()),
             password_hash: password_hash
                 .map(str::to_string)
                 .unwrap_or_else(|| existing.password_hash.clone()),
-            role: role.map(str::to_string).unwrap_or_else(|| existing.role.clone()),
+            role: role
+                .map(str::to_string)
+                .unwrap_or_else(|| existing.role.clone()),
             created_at: existing.created_at,
             updated_at: Utc::now(),
         };
@@ -313,7 +314,10 @@ mod tests {
         let store = InMemoryUserStore::new();
         store.create("bob@example.com", "h", "User").await.unwrap();
         assert!(matches!(
-            store.create("BOB@example.com", "h", "User").await.unwrap_err(),
+            store
+                .create("BOB@example.com", "h", "User")
+                .await
+                .unwrap_err(),
             AppError::Conflict(_)
         ));
     }
@@ -326,10 +330,7 @@ mod tests {
             .await
             .unwrap();
         // Only role provided: email + password_hash must be untouched.
-        let updated = store
-            .update(u.id, None, None, Some("Admin"))
-            .await
-            .unwrap();
+        let updated = store.update(u.id, None, None, Some("Admin")).await.unwrap();
         assert_eq!(updated.role, "Admin");
         assert_eq!(updated.email, "carol@example.com");
         assert_eq!(updated.password_hash, "old-hash");
@@ -359,7 +360,10 @@ mod tests {
             AppError::NotFound
         ));
         assert!(matches!(
-            store.update(ghost, None, None, Some("User")).await.unwrap_err(),
+            store
+                .update(ghost, None, None, Some("User"))
+                .await
+                .unwrap_err(),
             AppError::NotFound
         ));
         assert!(matches!(
@@ -371,6 +375,12 @@ mod tests {
     #[tokio::test]
     async fn find_by_email_returns_none_for_unknown() {
         let store = InMemoryUserStore::new();
-        assert!(store.find_by_email("nobody@example.com").await.unwrap().is_none());
+        assert!(
+            store
+                .find_by_email("nobody@example.com")
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 }

@@ -23,7 +23,7 @@ fn square_polygon(min_lng: f64, min_lat: f64, max_lng: f64, max_lat: f64) -> ser
 
 #[sqlx::test]
 async fn set_territory_returns_tribe_with_geojson(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (_, tribe) = client.post("/tribes", json!({ "name": "Demo" })).await;
     let id = tribe["id"].as_str().unwrap();
@@ -43,7 +43,7 @@ async fn set_territory_returns_tribe_with_geojson(pool: PgPool) {
 
 #[sqlx::test]
 async fn get_tribe_after_set_includes_territory(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, tribe) = client.post("/tribes", json!({ "name": "Demo" })).await;
     let id = tribe["id"].as_str().unwrap();
 
@@ -60,7 +60,7 @@ async fn get_tribe_after_set_includes_territory(pool: PgPool) {
 
 #[sqlx::test]
 async fn clear_territory_nulls_the_field(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, tribe) = client.post("/tribes", json!({ "name": "Demo" })).await;
     let id = tribe["id"].as_str().unwrap();
 
@@ -75,12 +75,15 @@ async fn clear_territory_nulls_the_field(pool: PgPool) {
     assert_eq!(status, StatusCode::NO_CONTENT);
 
     let (_, fetched) = client.get(&format!("/tribes/{id}")).await;
-    assert!(fetched["territory"].is_null(), "territory should be null after DELETE, got {fetched}");
+    assert!(
+        fetched["territory"].is_null(),
+        "territory should be null after DELETE, got {fetched}"
+    );
 }
 
 #[sqlx::test]
 async fn set_territory_rejects_invalid_geojson(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, tribe) = client.post("/tribes", json!({ "name": "Demo" })).await;
     let id = tribe["id"].as_str().unwrap();
 
@@ -107,7 +110,7 @@ async fn set_territory_requires_admin(pool: PgPool) {
     assert_eq!(status, StatusCode::UNAUTHORIZED);
 
     // User auth → 403
-    let user = TestClient::new(pool).as_user().await;
+    let user = TestClient::new(pool).with_user().await;
     let (status, _) = user
         .put(
             &format!("/tribes/{bogus}/territory"),
@@ -119,7 +122,7 @@ async fn set_territory_requires_admin(pool: PgPool) {
 
 #[sqlx::test]
 async fn search_near_returns_only_matching_tribes(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (_, inside) = client.post("/tribes", json!({ "name": "Inside" })).await;
     let inside_id = inside["id"].as_str().unwrap();
@@ -139,7 +142,9 @@ async fn search_near_returns_only_matching_tribes(pool: PgPool) {
         )
         .await;
 
-    let (_, no_territory) = client.post("/tribes", json!({ "name": "NoTerritory" })).await;
+    let (_, no_territory) = client
+        .post("/tribes", json!({ "name": "NoTerritory" }))
+        .await;
     let no_terr_id = no_territory["id"].as_str().unwrap();
 
     // Query a point inside the first polygon, with a small radius.

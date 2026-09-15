@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO users (email, password_hash, role)\n        VALUES ($1, $2, 'Admin')\n        ON CONFLICT (email) DO UPDATE\n            SET password_hash = EXCLUDED.password_hash,\n                role          = 'Admin'\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "citext",
+            "kind": "Simple"
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "444bcfc72044871b349c76f37857c3f00d431a7fdcb814ab67107f9192053470"
+}

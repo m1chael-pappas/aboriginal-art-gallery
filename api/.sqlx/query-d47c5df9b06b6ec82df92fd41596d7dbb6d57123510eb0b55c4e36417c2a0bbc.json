@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "TRUNCATE artifacts, artists, tribes RESTART IDENTITY",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "d47c5df9b06b6ec82df92fd41596d7dbb6d57123510eb0b55c4e36417c2a0bbc"
+}

@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, name, region, language_group, description,\n                   ST_AsGeoJSON(territory)::JSONB AS \"territory?: serde_json::Value\",\n                   created_at, updated_at\n            FROM tribes\n            WHERE territory IS NOT NULL\n              AND ST_DWithin(\n                    territory,\n                    ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,\n                    $3\n                  )\n            ORDER BY ST_Distance(\n                       territory,\n                       ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography\n                     )\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "region",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "language_group",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "territory?: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Float8",
+        "Float8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "8857521cff7e2aa357244c63683d90846c2ecce3efa0647de60ddd14d33028e3"
+}

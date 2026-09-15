@@ -19,14 +19,14 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::model::{Tribe, TribeInput};
-use crate::error::{AppError, AppResult};
+use crate::error::{AppError, AppResult, UNIQUE_VIOLATION, on_sqlstate};
 
+#[cfg(test)]
+use chrono::Utc;
 #[cfg(test)]
 use std::collections::HashMap;
 #[cfg(test)]
 use std::sync::Mutex;
-#[cfg(test)]
-use chrono::Utc;
 
 /// CRUD + territory + spatial-search contract for tribes.
 #[async_trait]
@@ -218,12 +218,9 @@ impl TribeStore for PgTribeStore {
 /// Translate Postgres unique-violation (SQLSTATE 23505) on `tribes.name`
 /// into a 409, instead of letting it surface as a generic 500.
 fn map_unique_violation(err: sqlx::Error) -> AppError {
-    if let sqlx::Error::Database(db_err) = &err {
-        if db_err.code().as_deref() == Some("23505") {
-            return AppError::Conflict("a tribe with this name already exists".into());
-        }
-    }
-    AppError::Database(err)
+    on_sqlstate(UNIQUE_VIOLATION, || {
+        AppError::Conflict("a tribe with this name already exists".into())
+    })(err)
 }
 
 /// Map a failure from the `set_territory` query to the right status.
@@ -308,10 +305,7 @@ impl TribeStore for InMemoryTribeStore {
 
     async fn update(&self, id: Uuid, input: TribeInput) -> AppResult<Tribe> {
         let mut rows = self.rows.lock().expect("tribe store mutex poisoned");
-        if rows
-            .values()
-            .any(|t| t.id != id && t.name == input.name)
-        {
+        if rows.values().any(|t| t.id != id && t.name == input.name) {
             return Err(AppError::Conflict(
                 "a tribe with this name already exists".into(),
             ));

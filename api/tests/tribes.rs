@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 #[sqlx::test]
 async fn create_tribe_happy_path(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (status, body) = client
         .post(
@@ -31,11 +31,9 @@ async fn create_tribe_happy_path(pool: PgPool) {
 
 #[sqlx::test]
 async fn create_tribe_rejects_empty_name(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
-    let (status, body) = client
-        .post("/tribes", json!({ "name": "   " }))
-        .await;
+    let (status, body) = client.post("/tribes", json!({ "name": "   " })).await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert!(body["error"].as_str().unwrap().contains("name"));
@@ -43,7 +41,7 @@ async fn create_tribe_rejects_empty_name(pool: PgPool) {
 
 #[sqlx::test]
 async fn create_tribe_rejects_duplicate_name(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (first, _) = client.post("/tribes", json!({ "name": "Pintupi" })).await;
     assert_eq!(first, StatusCode::CREATED);
@@ -58,7 +56,7 @@ async fn create_tribe_rejects_duplicate_name(pool: PgPool) {
 
 #[sqlx::test]
 async fn list_tribes_returns_array(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (status, body) = client.get("/tribes").await;
     assert_eq!(status, StatusCode::OK);
@@ -74,7 +72,7 @@ async fn list_tribes_returns_array(pool: PgPool) {
 
 #[sqlx::test]
 async fn get_tribe_by_id_returns_record(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, created) = client.post("/tribes", json!({ "name": "Yolngu" })).await;
     let id = created["id"].as_str().unwrap();
 
@@ -85,7 +83,7 @@ async fn get_tribe_by_id_returns_record(pool: PgPool) {
 
 #[sqlx::test]
 async fn get_tribe_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let unknown = Uuid::new_v4();
     let (status, _) = client.get(&format!("/tribes/{unknown}")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -93,7 +91,7 @@ async fn get_tribe_unknown_id_returns_404(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_tribe_replaces_fields(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, created) = client.post("/tribes", json!({ "name": "Old" })).await;
     let id = created["id"].as_str().unwrap();
 
@@ -111,7 +109,7 @@ async fn update_tribe_replaces_fields(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_tribe_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let unknown = Uuid::new_v4();
 
     let (status, _) = client
@@ -122,7 +120,7 @@ async fn update_tribe_unknown_id_returns_404(pool: PgPool) {
 
 #[sqlx::test]
 async fn update_tribe_rejects_duplicate_name(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     client.post("/tribes", json!({ "name": "First" })).await;
     let (_, second) = client.post("/tribes", json!({ "name": "Second" })).await;
@@ -137,7 +135,7 @@ async fn update_tribe_rejects_duplicate_name(pool: PgPool) {
 
 #[sqlx::test]
 async fn delete_tribe_removes_record(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let (_, created) = client.post("/tribes", json!({ "name": "Gone" })).await;
     let id = created["id"].as_str().unwrap();
 
@@ -150,7 +148,7 @@ async fn delete_tribe_removes_record(pool: PgPool) {
 
 #[sqlx::test]
 async fn delete_tribe_unknown_id_returns_404(pool: PgPool) {
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
     let unknown = Uuid::new_v4();
     let (status, _) = client.delete(&format!("/tribes/{unknown}")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -160,7 +158,7 @@ async fn delete_tribe_unknown_id_returns_404(pool: PgPool) {
 async fn delete_tribe_nulls_artist_tribe_id(pool: PgPool) {
     // ON DELETE SET NULL: deleting a tribe should leave artists from that
     // tribe in place, just with tribe_id cleared.
-    let client = TestClient::new(pool).as_admin().await;
+    let client = TestClient::new(pool).with_admin().await;
 
     let (_, tribe) = client
         .post("/tribes", json!({ "name": "Disappearing" }))
@@ -181,5 +179,8 @@ async fn delete_tribe_nulls_artist_tribe_id(pool: PgPool) {
 
     let (status, after) = client.get(&format!("/artists/{artist_id}")).await;
     assert_eq!(status, StatusCode::OK);
-    assert!(after["tribe_id"].is_null(), "tribe_id should be null after tribe deletion, got: {after}");
+    assert!(
+        after["tribe_id"].is_null(),
+        "tribe_id should be null after tribe deletion, got: {after}"
+    );
 }
