@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useUsersStore } from '@/stores/users'
 import { useAuthStore } from '@/stores/auth'
 import type { Role, User } from '@/api/types'
+import { catalogNumber } from '@/utils/format'
 
 const users = useUsersStore()
 const auth = useAuthStore()
@@ -18,9 +19,6 @@ onMounted(() => {
 
 const selfId = computed(() => auth.user?.id ?? null)
 
-function pad(n: number): string {
-  return String(n).padStart(3, '0')
-}
 
 function shortDate(iso: string): string {
   return iso.slice(0, 10)
@@ -103,7 +101,7 @@ async function onDelete(u: User) {
         :key="u.id"
         class="grid grid-cols-[50px_2fr_90px_110px_150px] gap-3 py-3 border-b border-dashed border-line items-center text-sm"
       >
-        <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
+        <span class="font-mono text-xs text-muted">{{ catalogNumber(i + 1) }}</span>
         <span class="text-ink">
           {{ u.email }}
           <span

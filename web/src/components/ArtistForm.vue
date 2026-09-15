@@ -3,6 +3,7 @@ import { onMounted, reactive } from 'vue'
 import FormField from '@/components/FormField.vue'
 import { useTribesStore } from '@/stores/tribes'
 import type { ArtistInput } from '@/api/types'
+import { blankToNull } from '@/utils/format'
 
 const props = defineProps<{
   initial: ArtistInput
@@ -30,19 +31,15 @@ const form = reactive<ArtistInput>({
   tribe_id: props.initial.tribe_id ?? null,
 })
 
-function emptyToNull<T extends string | number | null | undefined>(v: T): T | null {
-  if (v === '' || v === undefined) return null
-  return v
-}
 
 function onSubmit() {
   emit('submit', {
     display_name: form.display_name.trim(),
-    birth_year: emptyToNull(form.birth_year),
-    death_year: emptyToNull(form.death_year),
-    region: emptyToNull(form.region?.toString().trim() ?? null),
-    biography: emptyToNull(form.biography?.toString().trim() ?? null),
-    tribe_id: emptyToNull(form.tribe_id),
+    birth_year: blankToNull(form.birth_year),
+    death_year: blankToNull(form.death_year),
+    region: blankToNull(form.region),
+    biography: blankToNull(form.biography),
+    tribe_id: blankToNull(form.tribe_id),
   })
 }
 

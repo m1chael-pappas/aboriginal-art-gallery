@@ -3,6 +3,7 @@ import { onMounted, reactive } from 'vue'
 import FormField from '@/components/FormField.vue'
 import { useArtistsStore } from '@/stores/artists'
 import type { ArtifactInput } from '@/api/types'
+import { blankToNull } from '@/utils/format'
 
 const props = defineProps<{
   initial: ArtifactInput
@@ -34,23 +35,19 @@ const form = reactive<ArtifactInput>({
   description: props.initial.description ?? null,
 })
 
-function emptyToNull<T extends string | number | null | undefined>(v: T): T | null {
-  if (v === '' || v === undefined) return null
-  return v
-}
 
 function onSubmit() {
   emit('submit', {
     title: form.title.trim(),
     artist_id: form.artist_id,
-    art_type: emptyToNull(form.art_type?.toString().trim() ?? null),
-    art_style: emptyToNull(form.art_style?.toString().trim() ?? null),
-    medium: emptyToNull(form.medium?.toString().trim() ?? null),
-    year_created: emptyToNull(form.year_created),
-    height_cm: emptyToNull(form.height_cm),
-    width_cm: emptyToNull(form.width_cm),
-    depth_cm: emptyToNull(form.depth_cm),
-    description: emptyToNull(form.description?.toString().trim() ?? null),
+    art_type: blankToNull(form.art_type),
+    art_style: blankToNull(form.art_style),
+    medium: blankToNull(form.medium),
+    year_created: blankToNull(form.year_created),
+    height_cm: blankToNull(form.height_cm),
+    width_cm: blankToNull(form.width_cm),
+    depth_cm: blankToNull(form.depth_cm),
+    description: blankToNull(form.description),
   })
 }
 

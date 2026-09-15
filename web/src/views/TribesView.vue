@@ -5,6 +5,7 @@ import { useTribesStore } from '@/stores/tribes'
 import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useAuthStore } from '@/stores/auth'
+import { catalogNumber } from '@/utils/format'
 
 const tribes = useTribesStore()
 const artists = useArtistsStore()
@@ -48,9 +49,6 @@ function artifactsInTribe(tribeId: string): number {
   )
 }
 
-function pad(n: number): string {
-  return `T-${String(n).padStart(2, '0')}`
-}
 </script>
 
 <template>
@@ -100,7 +98,7 @@ function pad(n: number): string {
         :to="{ name: 'tribes.detail', params: { id: tribe.id } }"
         class="grid grid-cols-[60px_1.2fr_1fr_1.5fr_70px_80px] gap-3 py-3 border-b border-dashed border-line items-center text-sm hover:bg-ochre/5 transition-colors"
       >
-        <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
+        <span class="font-mono text-xs text-muted">{{ catalogNumber(i + 1, 'T-', 2) }}</span>
         <span class="text-ink">{{ tribe.name }}</span>
         <span class="text-muted">{{ tribe.region ?? '-' }}</span>
         <span class="text-muted">{{ tribe.language_group ?? '-' }}</span>

@@ -5,6 +5,7 @@ import { useArtistsStore } from '@/stores/artists'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useTribesStore } from '@/stores/tribes'
 import { useAuthStore } from '@/stores/auth'
+import { catalogNumber, lifespan } from '@/utils/format'
 
 const artists = useArtistsStore()
 const artifacts = useArtifactsStore()
@@ -31,14 +32,6 @@ const worksByArtistId = computed(() => {
   return counts
 })
 
-function era(birth: number | null, death: number | null): string {
-  if (birth === null && death === null) return '-'
-  return `${birth ?? '?'}-${death ?? 'present'}`
-}
-
-function pad(n: number): string {
-  return String(n).padStart(3, '0')
-}
 </script>
 
 <template>
@@ -86,11 +79,11 @@ function pad(n: number): string {
         :to="{ name: 'artists.detail', params: { id: artist.id } }"
         class="grid grid-cols-[50px_2fr_1.2fr_1fr_60px] gap-3 py-3 border-b border-dashed border-line items-center text-sm hover:bg-ochre/5 transition-colors"
       >
-        <span class="font-mono text-xs text-muted">{{ pad(i + 1) }}</span>
+        <span class="font-mono text-xs text-muted">{{ catalogNumber(i + 1) }}</span>
         <span class="text-ink">{{ artist.display_name }}</span>
         <span class="text-muted">{{ tribeNameById.get(artist.tribe_id ?? '') ?? '-' }}</span>
         <span class="font-mono text-xs text-ink">
-          {{ era(artist.birth_year, artist.death_year) }}
+          {{ lifespan(artist.birth_year, artist.death_year) }}
         </span>
         <span class="font-mono text-xs text-ochre text-right">
           {{ worksByArtistId.get(artist.id) ?? 0 }}

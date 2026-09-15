@@ -2,6 +2,7 @@
 import { reactive } from 'vue'
 import FormField from '@/components/FormField.vue'
 import type { TribeInput } from '@/api/types'
+import { blankToNull } from '@/utils/format'
 
 const props = defineProps<{
   initial: TribeInput
@@ -22,18 +23,13 @@ const form = reactive<TribeInput>({
   description: props.initial.description ?? null,
 })
 
-function emptyToNull(v: string | null | undefined): string | null {
-  if (!v) return null
-  const trimmed = v.trim()
-  return trimmed === '' ? null : trimmed
-}
 
 function onSubmit() {
   emit('submit', {
     name: form.name.trim(),
-    region: emptyToNull(form.region),
-    language_group: emptyToNull(form.language_group),
-    description: emptyToNull(form.description),
+    region: blankToNull(form.region),
+    language_group: blankToNull(form.language_group),
+    description: blankToNull(form.description),
   })
 }
 

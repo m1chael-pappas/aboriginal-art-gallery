@@ -6,6 +6,7 @@ import { useTribesStore } from '@/stores/tribes'
 import { useArtifactsStore } from '@/stores/artifacts'
 import { useAuthStore } from '@/stores/auth'
 import type { Artist } from '@/api/types'
+import { lifespan } from '@/utils/format'
 
 const props = defineProps<{ id: string }>()
 
@@ -45,12 +46,9 @@ const works = computed(() => {
   return artifacts.items.filter((a) => a.artist_id === artist.value!.id)
 })
 
-const era = computed(() => {
-  if (!artist.value) return '-'
-  const { birth_year, death_year } = artist.value
-  if (birth_year === null && death_year === null) return '-'
-  return `${birth_year ?? '?'}-${death_year ?? 'present'}`
-})
+const era = computed(() =>
+  artist.value ? lifespan(artist.value.birth_year, artist.value.death_year) : '-',
+)
 
 async function onDelete() {
   if (!artist.value) return

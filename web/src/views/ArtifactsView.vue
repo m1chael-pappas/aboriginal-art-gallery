@@ -5,6 +5,7 @@ import { useArtifactsStore } from '@/stores/artifacts'
 import { useArtistsStore } from '@/stores/artists'
 import { useTribesStore } from '@/stores/tribes'
 import { useAuthStore } from '@/stores/auth'
+import { catalogNumber } from '@/utils/format'
 
 const artifacts = useArtifactsStore()
 const artists = useArtistsStore()
@@ -19,7 +20,7 @@ onMounted(() => {
 
 const artistTribeId = computed(() => {
   const map = new Map<string, string | null>()
-  for (const a of artists.items) map.set(a.id, a.tribe_id)
+  for (const a of artists.items) map.set(a.id, a.tribe_id ?? null)
   return map
 })
 
@@ -35,9 +36,6 @@ function tribeOf(artistId: string): string {
   return tribeNameById.value.get(tid) ?? ''
 }
 
-function pad(n: number): string {
-  return `A-${String(n).padStart(3, '0')}`
-}
 </script>
 
 <template>
@@ -82,7 +80,7 @@ function pad(n: number): string {
         >
           <span class="font-mono text-[10px] text-muted">image</span>
         </div>
-        <div class="font-mono text-[11px] text-ochre">{{ pad(i + 1) }}</div>
+        <div class="font-mono text-[11px] text-ochre">{{ catalogNumber(i + 1, 'A-') }}</div>
         <div class="text-sm font-medium text-ink leading-snug">
           {{ artifact.title }}
         </div>
