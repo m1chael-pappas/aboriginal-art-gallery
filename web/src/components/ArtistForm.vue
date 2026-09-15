@@ -49,25 +49,25 @@ const inputCls =
 
 <template>
   <form @submit.prevent="onSubmit" class="space-y-6 max-w-2xl">
-    <FormField label="display name" required>
-      <input v-model="form.display_name" required :class="inputCls" type="text" />
+    <FormField label="display name" required v-slot="{ id }">
+      <input :id="id" v-model="form.display_name" required :class="inputCls" type="text" />
     </FormField>
 
     <div class="grid grid-cols-2 gap-4">
-      <FormField label="birth year">
-        <input v-model.number="form.birth_year" :class="inputCls" type="number" />
+      <FormField label="birth year" v-slot="{ id }">
+        <input :id="id" v-model.number="form.birth_year" :class="inputCls" type="number" />
       </FormField>
-      <FormField label="death year">
-        <input v-model.number="form.death_year" :class="inputCls" type="number" />
+      <FormField label="death year" v-slot="{ id }">
+        <input :id="id" v-model.number="form.death_year" :class="inputCls" type="number" />
       </FormField>
     </div>
 
-    <FormField label="region">
-      <input v-model="form.region" :class="inputCls" type="text" />
+    <FormField label="region" v-slot="{ id }">
+      <input :id="id" v-model="form.region" :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="tribe">
-      <select v-model="form.tribe_id" :class="inputCls">
+    <FormField label="tribe" v-slot="{ id }">
+      <select :id="id" v-model="form.tribe_id" :class="inputCls">
         <option :value="null">-</option>
         <option v-for="t in tribes.items" :key="t.id" :value="t.id">
           {{ t.name }}
@@ -75,8 +75,8 @@ const inputCls =
       </select>
     </FormField>
 
-    <FormField label="biography">
-      <textarea v-model="form.biography" :class="inputCls" rows="6" />
+    <FormField label="biography" v-slot="{ id }">
+      <textarea :id="id" v-model="form.biography" :class="inputCls" rows="6" />
     </FormField>
 
     <div v-if="error" class="p-3 border border-ochre/40 bg-ochre/5 text-sm text-ink">

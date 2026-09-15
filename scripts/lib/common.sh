@@ -39,9 +39,11 @@ env_set() {
   rm -f "$tmp"
 }
 
-# env_get <file> <KEY>: prints the value of KEY from an env file.
+# env_get <file> <KEY>: prints the value of KEY from an env file, without
+# surrounding whitespace or quotes, the same way docker compose reads it.
 env_get() {
-  grep -E "^$2=" "$1" | tail -n1 | cut -d= -f2-
+  grep -E "^$2=" "$1" | tail -n1 | cut -d= -f2- \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/'
 }
 
 # gen_password: 128 random bits as hex, plus a fixed suffix so the result

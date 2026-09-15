@@ -81,6 +81,18 @@ describe('ArtistForm', () => {
     expect(submit.text()).toBe('saving…')
   })
 
+  it('links every label to its control so screen readers announce the field', () => {
+    const wrapper = mountForm()
+
+    const labels = wrapper.findAll('label')
+    expect(labels.length).toBeGreaterThan(0)
+    for (const label of labels) {
+      const target = label.attributes('for')
+      expect(target, `label "${label.text()}" has no for`).toBeTruthy()
+      expect(wrapper.find(`[id="${target}"]`).exists(), `no control for "${label.text()}"`).toBe(true)
+    }
+  })
+
   it('emits cancel', async () => {
     const wrapper = mountForm()
 

@@ -57,12 +57,12 @@ const inputCls =
 
 <template>
   <form @submit.prevent="onSubmit" class="space-y-6 max-w-2xl">
-    <FormField label="title" required>
-      <input v-model="form.title" required :class="inputCls" type="text" />
+    <FormField label="title" required v-slot="{ id }">
+      <input :id="id" v-model="form.title" required :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="artist" required>
-      <select v-model="form.artist_id" required :class="inputCls">
+    <FormField label="artist" required v-slot="{ id }">
+      <select :id="id" v-model="form.artist_id" required :class="inputCls">
         <option value="" disabled>- select -</option>
         <option v-for="a in artists.items" :key="a.id" :value="a.id">
           {{ a.display_name }}
@@ -71,36 +71,36 @@ const inputCls =
     </FormField>
 
     <div class="grid grid-cols-2 gap-4">
-      <FormField label="art type">
-        <input v-model="form.art_type" :class="inputCls" type="text" />
+      <FormField label="art type" v-slot="{ id }">
+        <input :id="id" v-model="form.art_type" :class="inputCls" type="text" />
       </FormField>
-      <FormField label="art style">
-        <input v-model="form.art_style" :class="inputCls" type="text" />
+      <FormField label="art style" v-slot="{ id }">
+        <input :id="id" v-model="form.art_style" :class="inputCls" type="text" />
       </FormField>
     </div>
 
-    <FormField label="medium" hint="canvas, bark, ochre on board, …">
-      <input v-model="form.medium" :class="inputCls" type="text" />
+    <FormField label="medium" hint="canvas, bark, ochre on board, …" v-slot="{ id }">
+      <input :id="id" v-model="form.medium" :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="year created">
-      <input v-model.number="form.year_created" :class="inputCls" type="number" />
+    <FormField label="year created" v-slot="{ id }">
+      <input :id="id" v-model.number="form.year_created" :class="inputCls" type="number" />
     </FormField>
 
     <div class="grid grid-cols-3 gap-4">
-      <FormField label="height (cm)">
-        <input v-model.number="form.height_cm" :class="inputCls" type="number" step="0.1" />
+      <FormField label="height (cm)" v-slot="{ id }">
+        <input :id="id" v-model.number="form.height_cm" :class="inputCls" type="number" step="0.1" />
       </FormField>
-      <FormField label="width (cm)">
-        <input v-model.number="form.width_cm" :class="inputCls" type="number" step="0.1" />
+      <FormField label="width (cm)" v-slot="{ id }">
+        <input :id="id" v-model.number="form.width_cm" :class="inputCls" type="number" step="0.1" />
       </FormField>
-      <FormField label="depth (cm)">
-        <input v-model.number="form.depth_cm" :class="inputCls" type="number" step="0.1" />
+      <FormField label="depth (cm)" v-slot="{ id }">
+        <input :id="id" v-model.number="form.depth_cm" :class="inputCls" type="number" step="0.1" />
       </FormField>
     </div>
 
-    <FormField label="description">
-      <textarea v-model="form.description" :class="inputCls" rows="6" />
+    <FormField label="description" v-slot="{ id }">
+      <textarea :id="id" v-model="form.description" :class="inputCls" rows="6" />
     </FormField>
 
     <div v-if="error" class="p-3 border border-ochre/40 bg-ochre/5 text-sm text-ink">

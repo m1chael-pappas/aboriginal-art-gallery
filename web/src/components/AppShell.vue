@@ -21,7 +21,7 @@ const navItems = computed(() => {
 
 const breadcrumb = computed(() => {
   const raw = route.name === 'home' ? 'index' : String(route.name ?? 'index')
-  const slug = raw.replace(/\./g, ' / ')
+  const slug = raw.replaceAll('.', ' / ')
   return `[ aboriginal_art / ${slug} ]`
 })
 

@@ -40,9 +40,10 @@ const artist = computed(() => {
 const dimensions = computed(() => {
   if (!artifact.value) return null
   const { height_cm, width_cm, depth_cm } = artifact.value
-  if (height_cm === null && width_cm === null && depth_cm === null) return null
-  const parts = [height_cm, width_cm, depth_cm].map((d) => (d === null ? '?' : d))
-  return `${parts[0]} × ${parts[1]}${depth_cm !== null ? ` × ${parts[2]}` : ''} cm`
+  if (height_cm == null && width_cm == null && depth_cm == null) return null
+  const parts = [height_cm, width_cm]
+  if (depth_cm != null) parts.push(depth_cm)
+  return `${parts.map((d) => d ?? '?').join(' × ')} cm`
 })
 
 async function onDelete() {

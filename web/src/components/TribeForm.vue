@@ -39,20 +39,20 @@ const inputCls =
 
 <template>
   <form @submit.prevent="onSubmit" class="space-y-6 max-w-2xl">
-    <FormField label="name" required>
-      <input v-model="form.name" required :class="inputCls" type="text" />
+    <FormField label="name" required v-slot="{ id }">
+      <input :id="id" v-model="form.name" required :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="region">
-      <input v-model="form.region" :class="inputCls" type="text" />
+    <FormField label="region" v-slot="{ id }">
+      <input :id="id" v-model="form.region" :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="language group">
-      <input v-model="form.language_group" :class="inputCls" type="text" />
+    <FormField label="language group" v-slot="{ id }">
+      <input :id="id" v-model="form.language_group" :class="inputCls" type="text" />
     </FormField>
 
-    <FormField label="description">
-      <textarea v-model="form.description" :class="inputCls" rows="6" />
+    <FormField label="description" v-slot="{ id }">
+      <textarea :id="id" v-model="form.description" :class="inputCls" rows="6" />
     </FormField>
 
     <div v-if="error" class="p-3 border border-ochre/40 bg-ochre/5 text-sm text-ink">

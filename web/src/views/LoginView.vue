@@ -38,8 +38,9 @@ const inputCls =
     <h1 class="text-3xl font-medium text-ink mb-8">Sign in</h1>
 
     <form @submit.prevent="onSubmit" class="space-y-6 max-w-md">
-      <FormField label="email" required>
+      <FormField label="email" required v-slot="{ id }">
         <input
+          :id="id"
           v-model="form.email"
           required
           autocomplete="email"
@@ -48,8 +49,9 @@ const inputCls =
         />
       </FormField>
 
-      <FormField label="password" required>
+      <FormField label="password" required v-slot="{ id }">
         <input
+          :id="id"
           v-model="form.password"
           required
           autocomplete="current-password"

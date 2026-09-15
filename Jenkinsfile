@@ -112,7 +112,7 @@ pipeline {
                             'Rust unit + integration': {
                                 dir('api') {
                                     sh '''
-                                        rm -rf "$CARGO_TARGET_DIR/nextest/ci" "$CARGO_TARGET_DIR/llvm-cov-target/nextest/ci"
+                                        rm -rf target/nextest/ci
                                         cargo ci-test
                                     '''
                                 }
@@ -130,8 +130,7 @@ pipeline {
             post {
                 always {
                     sh '''
-                        junit_rust="$(find "$CARGO_TARGET_DIR" -path '*nextest/ci/junit.xml' -print -quit)"
-                        [ -n "$junit_rust" ] && cp "$junit_rust" reports/junit/rust.xml || true
+                        [ -f api/target/nextest/ci/junit.xml ] && cp api/target/nextest/ci/junit.xml reports/junit/rust.xml || true
                         [ -f web/reports/junit.xml ] && cp web/reports/junit.xml reports/junit/web.xml || true
                     '''
                     junit testResults: 'reports/junit/rust.xml, reports/junit/web.xml', allowEmptyResults: true
