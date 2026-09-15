@@ -1,0 +1,3 @@
+[alias]
+ci-test = "llvm-cov nextest --profile ci --locked --lcov --output-path target/lcov.info"
+ci-clippy = "clippy --all-targets --locked --message-format=json -- -D warnings"
