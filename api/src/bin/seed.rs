@@ -1,16 +1,19 @@
-//! Dev-only data seeder.
+//! Data seeder for local dev, staging and production.
 //!
-//! Wipes artifacts/artists/tribes (in FK order) and reinserts a curated set
-//! of well-known Aboriginal artists, their tribes, and notable works.
-//! Attaches rough demo polygons to a handful of tribes so the PostGIS
-//! endpoints have something to return, and upserts a default admin user so
-//! the FE has someone to log in as. Run:
+//! Inserts a curated set of well-known Aboriginal artists, their tribes and
+//! notable works, attaches rough demo polygons to a handful of tribes so the
+//! PostGIS endpoints have something to return, and upserts an admin user.
 //!
-//!     cargo run --bin seed
+//!     cargo run --bin seed               # wipe the catalogue and reseed
+//!     cargo run --bin seed -- --if-empty # seed only when the catalogue is empty
 //!
-//! Idempotent - every run gives you the same end state. Destroys any
-//! existing rows in artifacts/artists/tribes; users are upserted (existing
-//! accounts stay, the admin's password gets reset to the default).
+//! Without flags every run gives the same end state: artifacts, artists and
+//! tribes are truncated first. `--if-empty` never deletes anything, which is
+//! what production deploys use so releases keep curated data. In both modes
+//! the admin is upserted, so its password always matches the environment.
+//!
+//! The admin comes from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`, falling
+//! back to the local demo account.
 
 use anyhow::Context;
 use gallery_api::auth::password;
@@ -18,8 +21,29 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use uuid::Uuid;
 
-const ADMIN_EMAIL: &str = "admin@gallery.local";
-const ADMIN_PASSWORD: &str = "admin-demo-pw";
+/// Admin account used when `SEED_ADMIN_EMAIL` is unset.
+const DEFAULT_ADMIN_EMAIL: &str = "admin@gallery.local";
+/// Admin password used when `SEED_ADMIN_PASSWORD` is unset. Local demo only.
+const DEFAULT_ADMIN_PASSWORD: &str = "admin-demo-pw";
+
+/// Admin credentials resolved from the environment.
+struct AdminAccount {
+    email: String,
+    password: String,
+    from_env: bool,
+}
+
+impl AdminAccount {
+    fn from_env() -> Self {
+        let password = std::env::var("SEED_ADMIN_PASSWORD").ok();
+        Self {
+            email: std::env::var("SEED_ADMIN_EMAIL")
+                .unwrap_or_else(|_| DEFAULT_ADMIN_EMAIL.to_string()),
+            from_env: password.is_some(),
+            password: password.unwrap_or_else(|| DEFAULT_ADMIN_PASSWORD.to_string()),
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,35 +57,68 @@ async fn main() -> anyhow::Result<()> {
         .connect(&database_url)
         .await?;
 
+    let if_empty = std::env::args().any(|arg| arg == "--if-empty");
+    let admin = AdminAccount::from_env();
+
+    if if_empty && catalogue_has_rows(&pool).await? {
+        println!("Catalogue already has data, leaving it untouched (--if-empty).");
+    } else {
+        seed_catalogue(&pool).await?;
+    }
+
+    println!("Seeding admin user...");
+    seed_admin(&pool, &admin).await?;
+
+    println!();
+    println!("Admin credentials:");
+    println!("  email:    {}", admin.email);
+    if admin.from_env {
+        println!("  password: (from SEED_ADMIN_PASSWORD)");
+    } else {
+        println!("  password: {DEFAULT_ADMIN_PASSWORD}");
+    }
+    Ok(())
+}
+
+/// Whether any tribe, artist or artifact row exists.
+async fn catalogue_has_rows(pool: &PgPool) -> anyhow::Result<bool> {
+    let has_rows = sqlx::query_scalar!(
+        r#"
+        SELECT EXISTS (SELECT 1 FROM tribes)
+            OR EXISTS (SELECT 1 FROM artists)
+            OR EXISTS (SELECT 1 FROM artifacts) AS "has_rows!"
+        "#
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(has_rows)
+}
+
+/// Truncates the catalogue tables and inserts the curated tribes,
+/// territories, artists and artifacts.
+async fn seed_catalogue(pool: &PgPool) -> anyhow::Result<()> {
     println!("Wiping artifacts, artists, tribes...");
     sqlx::query!("TRUNCATE artifacts, artists, tribes RESTART IDENTITY")
-        .execute(&pool)
+        .execute(pool)
         .await?;
 
     println!("Seeding tribes...");
-    let tribes = seed_tribes(&pool).await?;
+    let tribes = seed_tribes(pool).await?;
 
     println!("Seeding tribe territories (rough demo polygons, not authoritative)...");
-    seed_territories(&pool, &tribes).await?;
+    seed_territories(pool, &tribes).await?;
 
     println!("Seeding artists...");
-    let artists = seed_artists(&pool, &tribes).await?;
+    let artists = seed_artists(pool, &tribes).await?;
 
     println!("Seeding artifacts...");
-    seed_artifacts(&pool, &artists).await?;
-
-    println!("Seeding admin user...");
-    seed_admin(&pool).await?;
+    seed_artifacts(pool, &artists).await?;
 
     println!(
-        "Done. {} tribes, {} artists, 7 artifacts, 1 admin.",
+        "Catalogue seeded: {} tribes, {} artists, 7 artifacts.",
         tribes.len(),
         artists.len()
     );
-    println!();
-    println!("Admin credentials for the FE demo:");
-    println!("  email:    {ADMIN_EMAIL}");
-    println!("  password: {ADMIN_PASSWORD}");
     Ok(())
 }
 
@@ -431,10 +488,10 @@ async fn seed_territories(pool: &PgPool, tribes: &[Seeded]) -> anyhow::Result<()
     Ok(())
 }
 
-/// Upsert the default admin. Idempotent: rerunning seed leaves any other
-/// users alone, just resets this account's password back to the default.
-async fn seed_admin(pool: &PgPool) -> anyhow::Result<()> {
-    let hash = password::hash_password(ADMIN_PASSWORD)
+/// Upserts the admin account. Idempotent: other users are left alone and
+/// this account's password is reset to the configured one.
+async fn seed_admin(pool: &PgPool, admin: &AdminAccount) -> anyhow::Result<()> {
+    let hash = password::hash_password(&admin.password)
         .map_err(|e| anyhow::anyhow!("hash admin password: {e}"))?;
 
     sqlx::query!(
@@ -445,12 +502,12 @@ async fn seed_admin(pool: &PgPool) -> anyhow::Result<()> {
             SET password_hash = EXCLUDED.password_hash,
                 role          = 'Admin'
         "#,
-        ADMIN_EMAIL,
+        admin.email,
         hash,
     )
     .execute(pool)
     .await?;
-    println!("  + {ADMIN_EMAIL}");
+    println!("  + {}", admin.email);
     Ok(())
 }
 

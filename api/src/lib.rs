@@ -14,7 +14,7 @@ use std::net::SocketAddr;
 
 use anyhow::Context;
 use axum::{Router, routing::get};
-use axum_prometheus::PrometheusMetricLayerBuilder;
+use axum_prometheus::{EndpointLabel, PrometheusMetricLayerBuilder};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -61,19 +61,27 @@ pub fn bind_addr() -> anyhow::Result<SocketAddr> {
         .with_context(|| format!("BIND_ADDR `{raw}` is not a valid socket address"))
 }
 
+/// `endpoint` label for requests that matched no route.
+pub const UNMATCHED_ENDPOINT: &str = "unmatched";
+
 /// Wraps `router` in Prometheus HTTP metrics and mounts the `/metrics`
 /// scrape endpoint.
 ///
 /// Emits `axum_http_requests_total`, `axum_http_requests_duration_seconds`
 /// and `axum_http_requests_pending`, labelled by matched route, method and
-/// status. `/metrics` and `/health` are excluded so scrapes and probes do not
-/// inflate request rate or skew latency.
+/// status. Requests that match no route share the [`UNMATCHED_ENDPOINT`]
+/// label, so probing random URLs cannot create unbounded label values.
+/// `/metrics` and `/health` are excluded so scrapes and probes do not inflate
+/// request rate or skew latency.
 ///
 /// Installs the process-wide `metrics` recorder, which can only happen once
 /// per process. Call it from `main`, never from [`build_router`], because
 /// the integration tests build a router per test.
 pub fn with_metrics(router: Router) -> Router {
     let (layer, handle) = PrometheusMetricLayerBuilder::new()
+        .with_endpoint_label_type(EndpointLabel::MatchedPathWithFallbackFn(|_| {
+            UNMATCHED_ENDPOINT.to_string()
+        }))
         .with_ignore_patterns(&["/metrics", "/health"])
         .with_default_metrics()
         .build_pair();

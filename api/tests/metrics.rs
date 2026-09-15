@@ -6,7 +6,7 @@ mod common;
 
 use axum::http::StatusCode;
 use common::TestClient;
-use gallery_api::with_metrics;
+use gallery_api::{UNMATCHED_ENDPOINT, with_metrics};
 use sqlx::PgPool;
 
 #[sqlx::test]
@@ -19,6 +19,8 @@ async fn metrics_count_routed_requests_but_not_probes(pool: PgPool) {
         StatusCode::BAD_REQUEST
     );
     assert_eq!(client.get("/health").await.0, StatusCode::OK);
+    assert_eq!(client.get("/wp-login.php").await.0, StatusCode::NOT_FOUND);
+    assert_eq!(client.get("/.env").await.0, StatusCode::NOT_FOUND);
 
     let (status, body) = client.get_text("/metrics").await;
 
@@ -36,6 +38,17 @@ async fn metrics_count_routed_requests_but_not_probes(pool: PgPool) {
     assert!(
         request_lines.iter().any(|l| l.contains(r#"status="400""#)),
         "missing 400 counter in:\n{body}"
+    );
+    let unmatched = format!(r#"endpoint="{UNMATCHED_ENDPOINT}""#);
+    assert!(
+        request_lines
+            .iter()
+            .any(|l| l.contains(&unmatched) && l.contains(r#"status="404""#) && l.ends_with(" 2")),
+        "unknown paths must share one label in:\n{body}"
+    );
+    assert!(
+        !body.contains("wp-login") && !body.contains(".env"),
+        "raw unknown paths must not become label values:\n{body}"
     );
     assert!(
         body.contains("axum_http_requests_duration_seconds_bucket"),

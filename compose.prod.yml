@@ -1,0 +1,56 @@
+name: gallery-prod
+
+services:
+  db:
+    extends: { file: compose.base.yml, service: db }
+    volumes:
+      - prod-db:/var/lib/postgresql/data
+
+  api:
+    extends: { file: compose.base.yml, service: api }
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  seed:
+    extends: { file: compose.base.yml, service: seed }
+    command: ["--if-empty"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    extends: { file: compose.base.yml, service: web }
+    ports:
+      - "8092:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  datadog-agent:
+    image: gallery-datadog-agent:${IMAGE_TAG:?set IMAGE_TAG to the image tag to deploy}
+    restart: unless-stopped
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?set DD_API_KEY}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_HOSTNAME: gallery-prod
+      DD_ENV: prod
+      DD_TAGS: "project:aboriginal-art-gallery"
+      DD_APM_ENABLED: "false"
+      DD_LOGS_ENABLED: "false"
+      DD_PROCESS_AGENT_ENABLED: "false"
+      DD_CONTAINER_EXCLUDE: "name:.*"
+      DD_CONTAINER_INCLUDE: "name:gallery-prod-.*"
+      DD_VERSION: ${IMAGE_TAG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  prod-db:

@@ -1,0 +1,41 @@
+# Service definitions shared by compose.staging.yml and compose.prod.yml.
+# Not meant to be run on its own; each environment extends these services
+# and adds its ports, volumes and dependencies.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gallery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the env file}
+      POSTGRES_DB: gallery
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gallery -d gallery"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: gallery-api:${IMAGE_TAG:?set IMAGE_TAG to the image tag to deploy}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://gallery:${POSTGRES_PASSWORD}@db:5432/gallery
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in the env file}
+      RUST_LOG: info
+
+  seed:
+    image: gallery-api:${IMAGE_TAG:?set IMAGE_TAG to the image tag to deploy}
+    entrypoint: ["/app/seed"]
+    restart: "no"
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgres://gallery:${POSTGRES_PASSWORD}@db:5432/gallery
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:?set SEED_ADMIN_EMAIL in the env file}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD in the env file}
+
+  web:
+    image: gallery-web:${IMAGE_TAG:?set IMAGE_TAG to the image tag to deploy}
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: api:8080
