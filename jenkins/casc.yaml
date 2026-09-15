@@ -1,0 +1,103 @@
+jenkins:
+  systemMessage: "Aboriginal Art Gallery CI/CD. Configured as code from jenkins/casc.yaml."
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_USER:-admin}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: "${JENKINS_URL:-http://localhost:8090/}"
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: "sonarqube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonar-token"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - string:
+              scope: GLOBAL
+              id: "sonar-token"
+              description: "SonarQube analysis token"
+              secret: "${SONAR_TOKEN:-unset}"
+          - string:
+              scope: GLOBAL
+              id: "datadog-api-key"
+              description: "Datadog API key"
+              secret: "${DD_API_KEY:-unset}"
+          - string:
+              scope: GLOBAL
+              id: "datadog-app-key"
+              description: "Datadog application key"
+              secret: "${DD_APP_KEY:-unset}"
+          - basicSSHUserPrivateKey:
+              scope: GLOBAL
+              id: "github-deploy-key"
+              description: "GitHub deploy key with write access, used to push release tags"
+              username: "git"
+              privateKeySource:
+                directEntry:
+                  privateKey: "${readFile:/run/secrets/github_deploy_key}"
+          - file:
+              scope: GLOBAL
+              id: "env-staging"
+              description: "Runtime environment for the staging stack"
+              fileName: ".env.staging"
+              secretBytes: "${readFileBase64:/run/secrets/env.staging}"
+          - file:
+              scope: GLOBAL
+              id: "env-prod"
+              description: "Runtime environment for the production stack"
+              fileName: ".env.prod"
+              secretBytes: "${readFileBase64:/run/secrets/env.prod}"
+
+jobs:
+  - script: >
+      pipelineJob('aboriginal-art-gallery') {
+        description('Build, test, analyse, secure, deploy, release and monitor the gallery.')
+        properties {
+          disableConcurrentBuilds()
+          buildDiscarder {
+            strategy {
+              logRotator {
+                numToKeepStr('30')
+                artifactNumToKeepStr('10')
+                daysToKeepStr('')
+                artifactDaysToKeepStr('')
+              }
+            }
+          }
+          pipelineTriggers {
+            triggers {
+              pollSCM {
+                scmpoll_spec('H/2 * * * *')
+              }
+            }
+          }
+        }
+        definition {
+          cpsScm {
+            lightweight(true)
+            scriptPath('Jenkinsfile')
+            scm {
+              git {
+                remote {
+                  url('${GALLERY_REPO_URL:-https://github.com/m1chael-pappas/aboriginal-art-gallery.git}')
+                }
+                branch('*/main')
+              }
+            }
+          }
+        }
+      }

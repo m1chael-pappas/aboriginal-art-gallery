@@ -1,0 +1,113 @@
+name: gallery-ci
+
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+    image: gallery-jenkins:local
+    container_name: gallery-jenkins
+    restart: unless-stopped
+    env_file: .env.jenkins
+    group_add:
+      - "${DOCKER_GID:?set DOCKER_GID to the gid of /var/run/docker.sock}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8090:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./jenkins/casc.yaml:/etc/jenkins/casc.yaml:ro
+      - ./secrets/github_deploy_key:/run/secrets/github_deploy_key:ro
+      - ./.env.staging:/run/secrets/env.staging:ro
+      - ./.env.prod:/run/secrets/env.prod:ro
+      - cargo_registry:/opt/cargo/registry
+      - cargo_git:/opt/cargo/git
+      - cargo_target:/var/cache/cargo-target
+      - pnpm_store:/var/cache/pnpm
+      - trivy_cache:/var/cache/trivy
+      - sonar_scanner_cache:/var/cache/sonar
+    networks:
+      - ci
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/login"]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 10
+
+  sonarqube-sysctl:
+    image: alpine:3.22
+    privileged: true
+    command: ["sysctl", "-w", "vm.max_map_count=524288", "fs.file-max=131072"]
+    restart: "no"
+
+  sonarqube:
+    image: sonarqube:26.9.0.129388-community
+    container_name: gallery-sonarqube
+    restart: unless-stopped
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: "${SONAR_DB_PASSWORD:?set SONAR_DB_PASSWORD in .env.jenkins}"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    ulimits:
+      nofile:
+        soft: 131072
+        hard: 131072
+    networks:
+      - ci
+    depends_on:
+      sonarqube-sysctl:
+        condition: service_completed_successfully
+      sonarqube-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 20
+
+  sonarqube-db:
+    image: postgres:17.11-alpine
+    container_name: gallery-sonarqube-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: "${SONAR_DB_PASSWORD:?set SONAR_DB_PASSWORD in .env.jenkins}"
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db:/var/lib/postgresql/data
+    networks:
+      - ci
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  ci:
+    name: gallery-ci
+
+volumes:
+  jenkins_home:
+  cargo_registry:
+  cargo_git:
+  cargo_target:
+  pnpm_store:
+  trivy_cache:
+  sonar_scanner_cache:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
+  sonar_db:

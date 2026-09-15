@@ -12,6 +12,10 @@
 .env
 .env.local
 *.env.local
+.env.jenkins
+.env.staging
+.env.prod
+/secrets/
 
 # IDE
 .idea/
