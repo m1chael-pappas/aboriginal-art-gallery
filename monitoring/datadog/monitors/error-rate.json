@@ -1,0 +1,16 @@
+{
+  "name": "[gallery-prod] API 5xx error rate above 5%",
+  "type": "query alert",
+  "query": "sum(last_5m):100 * sum:gallery.http.requests.count{service:gallery-api,env:prod,status:5*}.as_count() / sum:gallery.http.requests.count{service:gallery-api,env:prod}.as_count() > 5",
+  "message": "{{#is_alert}}{{value}}% of production API requests returned 5xx over the last 5 minutes (threshold 5%). A bad release or a database problem are the usual causes.{{/is_alert}}\n{{#is_warning}}{{value}}% of production API requests returned 5xx over the last 5 minutes.{{/is_warning}}\n{{#is_recovery}}The production API 5xx rate is back under the threshold.{{/is_recovery}}\n@__ALERT_EMAIL__",
+  "tags": ["managed-by:gallery-pipeline", "service:gallery-api", "env:prod", "severity:high"],
+  "priority": 2,
+  "options": {
+    "thresholds": { "critical": 5, "warning": 2 },
+    "notify_no_data": false,
+    "require_full_window": false,
+    "renotify_interval": 60,
+    "include_tags": true,
+    "notify_audit": false
+  }
+}

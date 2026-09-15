@@ -1,0 +1,18 @@
+init_config:
+
+instances:
+  - name: gallery-api
+    url: http://api:8080/health
+    timeout: 3
+    min_collection_interval: 15
+    tags:
+      - service:gallery-api
+      - probe:direct
+
+  - name: gallery-web
+    url: http://web:8080/api/health
+    timeout: 3
+    min_collection_interval: 15
+    tags:
+      - service:gallery-web
+      - probe:through-proxy

@@ -1,0 +1,16 @@
+{
+  "name": "[gallery-prod] API health probe latency above 500ms",
+  "type": "query alert",
+  "query": "avg(last_5m):avg:network.http.response_time{instance:gallery_api,env:prod} > 0.5",
+  "message": "{{#is_alert}}The /health probe has averaged {{value}}s over 5 minutes (threshold 0.5s). /health runs SELECT 1, so this usually means the database is saturated.{{/is_alert}}\n{{#is_warning}}The /health probe has averaged {{value}}s over 5 minutes.{{/is_warning}}\n{{#is_recovery}}Probe latency is back to normal.{{/is_recovery}}\n@__ALERT_EMAIL__",
+  "tags": ["managed-by:gallery-pipeline", "service:gallery-api", "env:prod", "severity:medium"],
+  "priority": 3,
+  "options": {
+    "thresholds": { "critical": 0.5, "warning": 0.25 },
+    "notify_no_data": false,
+    "require_full_window": false,
+    "renotify_interval": 0,
+    "include_tags": true,
+    "notify_audit": false
+  }
+}

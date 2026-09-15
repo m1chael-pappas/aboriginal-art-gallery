@@ -1,0 +1,18 @@
+init_config:
+
+instances:
+  - openmetrics_endpoint: http://api:8080/metrics
+    namespace: gallery
+    min_collection_interval: 15
+    metrics:
+      - axum_http_requests:
+          name: http.requests
+      - axum_http_requests_duration_seconds:
+          name: http.request.duration
+      - axum_http_requests_pending:
+          name: http.requests.pending
+    exclude_labels:
+      - endpoint
+    histogram_buckets_as_distributions: true
+    tags:
+      - service:gallery-api

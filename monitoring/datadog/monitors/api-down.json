@@ -1,0 +1,16 @@
+{
+  "name": "[gallery-prod] API is down",
+  "type": "service check",
+  "query": "\"http.can_connect\".over(\"instance:gallery_api\",\"env:prod\").last(4).by(\"instance\").count_by_status()",
+  "message": "{{#is_alert}}The production API has failed its /health probe 4 times in a row (about 1 minute). Check the container with `docker compose -p gallery-prod ps api` and roll back with `scripts/rollback.sh` if the last release caused it.{{/is_alert}}\n{{#is_recovery}}The production API is answering /health again.{{/is_recovery}}\n@__ALERT_EMAIL__",
+  "tags": ["managed-by:gallery-pipeline", "service:gallery-api", "env:prod", "severity:critical"],
+  "priority": 1,
+  "options": {
+    "thresholds": { "critical": 4, "warning": 2, "ok": 1 },
+    "notify_no_data": true,
+    "no_data_timeframe": 2,
+    "renotify_interval": 30,
+    "include_tags": true,
+    "notify_audit": false
+  }
+}

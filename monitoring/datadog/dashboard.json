@@ -1,0 +1,126 @@
+{
+  "title": "Aboriginal Art Gallery - production",
+  "description": "Live health of the gallery-prod stack. Managed by the Jenkins Monitoring stage from monitoring/datadog/dashboard.json; edits in the UI are overwritten on the next release.",
+  "layout_type": "ordered",
+  "reflow_type": "auto",
+  "template_variables": [],
+  "widgets": [
+    {
+      "definition": {
+        "type": "check_status",
+        "title": "API up (/health probe)",
+        "check": "http.can_connect",
+        "grouping": "cluster",
+        "group_by": [],
+        "tags": ["instance:gallery_api", "env:prod"]
+      },
+      "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+    },
+    {
+      "definition": {
+        "type": "check_status",
+        "title": "Web proxy up (/api/health)",
+        "check": "http.can_connect",
+        "grouping": "cluster",
+        "group_by": [],
+        "tags": ["instance:gallery_web", "env:prod"]
+      },
+      "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+    },
+    {
+      "definition": {
+        "type": "manage_status",
+        "title": "Pipeline-managed monitors",
+        "query": "tag:\"managed-by:gallery-pipeline\"",
+        "summary_type": "monitors",
+        "sort": "status,asc",
+        "display_format": "countsAndList",
+        "color_preference": "text",
+        "hide_zero_counts": true,
+        "show_last_triggered": true
+      },
+      "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Request rate by status (req/s)",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "requests",
+                "query": "sum:gallery.http.requests.count{service:gallery-api,env:prod} by {status}.as_rate()"
+              }
+            ],
+            "formulas": [{ "formula": "requests" }],
+            "display_type": "bars"
+          }
+        ],
+        "events": [{ "q": "tags:managed-by:gallery-pipeline" }]
+      },
+      "layout": { "x": 0, "y": 2, "width": 6, "height": 3 }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "5xx error rate (%)",
+        "show_legend": false,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "errors",
+                "query": "sum:gallery.http.requests.count{service:gallery-api,env:prod,status:5*}.as_count()"
+              },
+              {
+                "data_source": "metrics",
+                "name": "total",
+                "query": "sum:gallery.http.requests.count{service:gallery-api,env:prod}.as_count()"
+              }
+            ],
+            "formulas": [{ "formula": "100 * default_zero(errors) / total", "alias": "5xx %" }],
+            "display_type": "line"
+          }
+        ],
+        "markers": [{ "value": "y = 5", "display_type": "error dashed", "label": "alert threshold" }]
+      },
+      "layout": { "x": 6, "y": 4, "width": 6, "height": 3 }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Request latency p95 (s)",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "p95",
+                "query": "p95:gallery.http.request.duration{service:gallery-api,env:prod}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "probe",
+                "query": "avg:network.http.response_time{instance:gallery_api,env:prod}"
+              }
+            ],
+            "formulas": [
+              { "formula": "p95", "alias": "p95 all routes" },
+              { "formula": "probe", "alias": "/health probe" }
+            ],
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 5, "width": 6, "height": 3 }
+    }
+  ]
+}
